@@ -1,7 +1,9 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBuilder } from "@babylonjs/core";
+import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBuilder, Sound } from "@babylonjs/core";
+import { DynamicSurface } from "./geometry/dynamicSurface";
+import { createCustomShader } from "./geometry/dynamicShader";
 
 class App {
     constructor() {
@@ -22,7 +24,18 @@ class App {
         var camera: ArcRotateCamera = new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, Vector3.Zero(), scene);
         camera.attachControl(canvas, true);
         var light1: HemisphericLight = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
+        // const ground = MeshBuilder.CreateGround("ground", {width:10, height: 10}, scene);
         var sphere: Mesh = MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
+        sphere.position.y = 0.5;
+
+        const dynamicSurface = new DynamicSurface(.1, 2000, 2000, scene);
+
+        const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
+
+        const roof = MeshBuilder.CreateCylinder("roof", {diameter: 1.3, height: 1.2, tessellation: 3}, scene);
+        roof.scaling.x = 0.75;
+        roof.rotation.z = Math.PI / 2;
+        roof.position.y = 1.22;
 
         // hide/show the Inspector
         window.addEventListener("keydown", (ev) => {
