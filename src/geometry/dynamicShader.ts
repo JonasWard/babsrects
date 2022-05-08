@@ -6,7 +6,7 @@ export function createCustomShader(scene: Scene){
     fragment: "./customShader/a",
     },
     {
-        attributes: ["position", "normal", "uv"],
+        attributes: ["position", "normal", "uv", "normalRef"],
         uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
     }
     );

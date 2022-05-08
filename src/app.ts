@@ -28,7 +28,7 @@ class App {
         var sphere: Mesh = MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
         sphere.position.y = 0.5;
 
-        const dynamicSurface = new DynamicSurface(.1, 2000, 2000, scene);
+        const dynamicSurface = new DynamicSurface(.1, 100, 100, scene);
 
         const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
 

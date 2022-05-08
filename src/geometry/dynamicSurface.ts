@@ -1,4 +1,4 @@
-import { Mesh, Scene, ShaderMaterial, VertexBuffer, VertexData } from "@babylonjs/core";
+import { Mesh, Scene, ShaderMaterial, Buffer, VertexBuffer, VertexData, Vector3 } from "@babylonjs/core";
 import { createCustomShader } from "./dynamicShader";
 
 export class DynamicSurface extends Mesh{
@@ -7,7 +7,10 @@ export class DynamicSurface extends Mesh{
 
         const vertexData = new VertexData();
 
-        vertexData.positions = this._positionGeneration(sizeLength, vCount, hCount);
+        const {positions, uvs} = this._positionGeneration(sizeLength, vCount, hCount);
+        vertexData.positions = positions;
+        vertexData.uvs = uvs;
+
         vertexData.indices = this._indexGeneration(vCount, hCount);
 
         vertexData.applyToMesh(this);
@@ -21,20 +24,27 @@ export class DynamicSurface extends Mesh{
             this.material.setFloat("time", time);
             time +=0.1;
         });
+
+        this.position.x = -sizeLength * vCount / 2;
+        this.position.z = sizeLength * hCount / 2;
+
+        this.setVerticesBuffer(this._normalBuffer(vCount, hCount, scene));
     }
 
-    _positionGeneration(sizeLength: number, vCount: number, hCount: number): number[] {
+    _positionGeneration(sizeLength: number, vCount: number, hCount: number): {positions: number[], uvs: number[]} {
         const positions: number[] = [];
+        const uvs: number[] = [];
 
         for (let i = 0; i < vCount + 1; i++) {
             const x = i * sizeLength;
             for (let j = 0; j < hCount + 1; j++) {
                 const y = j * sizeLength;
                 positions.push(x, 0, -y);
+                uvs.push(x, y);
             }
         }
 
-        return positions;
+        return {positions, uvs};
     }
 
     _indexGeneration(vCount: number, hCount: number): number[] {
@@ -51,5 +61,21 @@ export class DynamicSurface extends Mesh{
         }
 
         return indices;
+    }
+
+    _normalBuffer(vCount: number, hCount: number, scene: Scene): VertexBuffer {
+        const normals: number[] = [];
+
+        for (let i = 0; i < vCount + 1; i++) {
+            for (let j = 0; j < hCount + 1; j++) {
+                // const v = new Vector3(Math.random(), Math.random(), Math.random());
+                // v.normalize();
+
+                normals.push(0, 1, 0);
+            }
+        }
+        
+        const normalVertexBuffer = new Buffer(scene.getEngine(), normals, false, 3)
+        return normalVertexBuffer.createVertexBuffer("normalRef", 0, 3);
     }
 }
