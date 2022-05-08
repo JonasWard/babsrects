@@ -68,9 +68,6 @@ export class DynamicSurface extends Mesh{
 
         for (let i = 0; i < vCount + 1; i++) {
             for (let j = 0; j < hCount + 1; j++) {
-                // const v = new Vector3(Math.random(), Math.random(), Math.random());
-                // v.normalize();
-
                 normals.push(0, 1, 0);
             }
         }

@@ -4,6 +4,8 @@ import "@babylonjs/loaders/glTF";
 import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBuilder, Sound } from "@babylonjs/core";
 import { DynamicSurface } from "./geometry/dynamicSurface";
 import { createCustomShader } from "./geometry/dynamicShader";
+import { ParallelTransportMesh } from "./geometry/parallelTransportFrames";
+import { createDirectedCurve } from "./geometry/directedCurve";
 
 class App {
     constructor() {
@@ -28,7 +30,10 @@ class App {
         var sphere: Mesh = MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
         sphere.position.y = 0.5;
 
-        const dynamicSurface = new DynamicSurface(.1, 100, 100, scene);
+        const pts = createDirectedCurve(new Vector3(0, 0, 0), {alpha: 0, beta: 0, gamma: 0}, .05, 0.01, 0.01, 10000);
+
+        // const dynamicSurface = new DynamicSurface(.1, 100, 100, scene);
+        const parallelTransportMesh = new ParallelTransportMesh(pts, 1.5, 100, scene);
 
         const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
 

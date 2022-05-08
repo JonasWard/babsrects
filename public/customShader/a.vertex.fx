@@ -13,8 +13,8 @@ uniform float time;
 varying vec2 vUV;
 
 void main(void) {
-    vec4 localPosition = vec4(position.x + 10. * sin(normalRef.y + normalRef.z + time / 4.0), position.y + 10.0 * sin(normalRef.x + normalRef.y + time / 4.0), position.z + 1. * sin(normalRef.y + normalRef.x + time / 4.0), 1.0);
+    vec4 localPosition = vec4(position + normalRef * (( .5 + .5 *  sin(uv.y * 6.28 + time / 4.0)) + ( .25 + .25 *  sin(uv.y * 6.283 * 5. + time / 4.0)) + ( .1 + .1 *  sin(uv.y * 314.15 + time / 4.0))), 1.0);
     gl_Position = worldViewProjection * localPosition;
 
-    vUV = vec2(mod(localPosition.xz, 2.0));
+    vUV = vec2(mod(localPosition.xz / 100., 1.0));
 }
