@@ -53,8 +53,8 @@ class App {
 
 
         for (let i = 0; i < count; i ++) {
-            const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 1000);
-            const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 32, material, scene);
+            const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
+            const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 32, material, 2.5, scene);
         }
 
         // const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
@@ -69,6 +69,8 @@ class App {
             // @ts-ignore
             material.setFloat("time", time);
         });
+
+        console.log(scene.getTotalVertices());
 
         // hide/show the Inspector
         window.addEventListener("keydown", (ev) => {

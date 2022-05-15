@@ -1,5 +1,8 @@
 precision highp float;
 
+float PI = 3.141592653589793;
+float TAU = 6.283185307179586;
+
 // Attributes
 attribute vec3 position;
 attribute vec2 uv;
@@ -8,11 +11,20 @@ attribute vec3 directionA;
 attribute vec3 directionB;
 attribute vec2 patternUV;
 
+// Attributes for normal calculation
+attribute vec3 previousPosition;
+attribute vec3 previousDirection;
+attribute vec2 previousUVPattern;
+attribute vec3 nextPosition;
+attribute vec3 nextDirection;
+attribute vec2 nextUVPattern;
+
 // Uniforms
 uniform mat4 worldViewProjection;
 uniform float time;
 
 // Varying
+varying vec2 letsColor;
 varying vec3 normalVec;
 varying vec3 positionVec;
 
@@ -98,14 +110,39 @@ float sdPerlin(vec3 p, float scale) {
     return d;
 }
 
-float distanceFunction() {
-    return cnoise(vec3(patternUV * .2, time)) * 25.;
+float distanceFunction(vec2 localPatternUV) {
+    return cnoise(vec3(localPatternUV * .2, time)) * 25.;
+}
+
+vec3 normalCalculation() {
+    vec3 localPreviousPosition = previousPosition + previousDirection * distanceFunction(previousUVPattern);
+    vec3 localNextPosition = nextPosition + nextDirection * distanceFunction(nextUVPattern);
+    vec3 p = normalize(localPreviousPosition - position);
+    vec3 n = normalize(localNextPosition - position);
+
+    float angle = mod(atan(p.z, -p.x) - atan(n.z, -n.x) + TAU, TAU) * .5;
+
+    float zxL = length(normal.zx);
+    float dirL = length(n.zx);
+    float lM = dirL / zxL;
+    float cA = cos(angle);
+    float sA = sin(angle);
+
+    float x = n.x * cA + n.z * sA;
+    float z = n.x * sA - n.z * cA;
+
+    // return vec3(0.,0.,0.);
+    return vec3(x * lM, normal.y, z * lM);
 }
 
 void main(void) {
-    vec4 localPosition = vec4(position + directionA * distanceFunction() , 1.0);
+    vec3 localInterimPosition = position + directionA * distanceFunction(patternUV);
+    normalVec = normalCalculation();
+    // normalVec = normal;
+    
+    letsColor = patternUV;
+    vec4 localPosition = vec4(localInterimPosition , 1.0);
     gl_Position = worldViewProjection * localPosition;
 
     positionVec = gl_Position.xyz;
-    normalVec = normal;
 }
