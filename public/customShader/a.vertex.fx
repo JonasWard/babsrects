@@ -99,7 +99,7 @@ float sdPerlin(vec3 p, float scale) {
 }
 
 float distanceFunction() {
-    return cnoise(vec3(patternUV * .5, time)) * 20.;
+    return cnoise(vec3(patternUV * .2, time)) * 25.;
 }
 
 void main(void) {

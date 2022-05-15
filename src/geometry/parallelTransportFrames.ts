@@ -1,11 +1,11 @@
-import { Buffer, Mesh, Scene, ShaderMaterial, Vector3, VertexData } from "@babylonjs/core";
+import { Buffer, Mesh, Scene, ShaderMaterial, Vector2, Vector3, VertexData } from "@babylonjs/core";
 
 export class ParallelTransportMesh extends Mesh {
 
     constructor(curvePoints: Vector3[], radius = 1.5, divisions: number, material: ShaderMaterial | undefined, scene: Scene) {
         super("parallelTransportMesh", scene);
 
-        const {positions, uvs, directions, directionA, directionB, patternUV} = this._constructPositions(curvePoints, radius, divisions);
+        const {positions, uvs, directions, directionA, directionB, patternUV, previousPosition, previousUVPattern, previousDirection, nextPosition, nextUVPattern, nextDirection} = this._constructPositions(curvePoints, radius, divisions);
         const indices = this._indices(divisions, curvePoints.length);
 
         const vertexData = new VertexData();
@@ -25,6 +25,24 @@ export class ParallelTransportMesh extends Mesh {
 
         const patterUVBuffer = new Buffer(scene.getEngine(), patternUV, false, 2);
         this.setVerticesBuffer(patterUVBuffer.createVertexBuffer("patternUV", 0, 2));
+
+        const previousPositionBuffer = new Buffer(scene.getEngine(), directionA, false, 3);
+        this.setVerticesBuffer(deformRefBufferA.createVertexBuffer("previousPosition", 0, 3));
+
+        const previousDirectionBuffer = new Buffer(scene.getEngine(), directionA, false, 3);
+        this.setVerticesBuffer(deformRefBufferA.createVertexBuffer("previousDirection", 0, 3));
+
+        const previousUVPatternBuffer = new Buffer(scene.getEngine(), patternUV, false, 2);
+        this.setVerticesBuffer(patterUVBuffer.createVertexBuffer("previousPatternUV", 0, 2));
+
+        const nextPositionBuffer = new Buffer(scene.getEngine(), directionA, false, 3);
+        this.setVerticesBuffer(deformRefBufferA.createVertexBuffer("nextPosition", 0, 3));
+
+        const nextDirectionBuffer = new Buffer(scene.getEngine(), directionA, false, 3);
+        this.setVerticesBuffer(deformRefBufferA.createVertexBuffer("nextDirection", 0, 3));
+
+        const nextUVPatternBuffer = new Buffer(scene.getEngine(), patternUV, false, 2);
+        this.setVerticesBuffer(patterUVBuffer.createVertexBuffer("nextPatternUV", 0, 2));
 
         if (material) {
             this.material = material;
@@ -81,17 +99,30 @@ export class ParallelTransportMesh extends Mesh {
         const directions = [];
         const patternUV = [];
 
-        // console.log(ns);
-        // console.log(vs);
+        const previousStartVector = frames[0].position.add(frames[0].position.subtract(frames[1].position).normalizeToNew());
+        const previousPosition = [];
+        const previousUVPattern = [];
+        const previousDirection = [];
 
-        // const localVs = [];
-        // const localUs = [];
+        const nextEndVector = frames[frames.length - 1].position.add(frames[frames.length - 1].position.subtract(frames[frames.length - 2].position).normalizeToNew());
+        const nextPosition = [];
+        const nextUVPattern = [];
+        const nextDirection = [];
 
-        frames.forEach(frame => {
+        frames.forEach((frame, index) => {
             const {normal, biNormal, length, position} = frame;
 
             const u = length * uDelta;
             const vPattern = position.y * uDelta;
+
+            const localPreviousPosition = index > 0 ? frames[index - 1].position : previousStartVector;
+            const localPreviousDirection = index > 0 ? frames[index - 1].normal : frames[0].normal;
+            const localPreviousUVPatternVector = index > 0 ? new Vector2(frames[index - 1].length * uDelta, frames[index - 1].position.y * uDelta): new Vector2(frames[0].length * uDelta, frames[0].position.y * uDelta);
+            
+            const localNextPosition = index < frames.length - 1 ? frames[index + 1].position : nextEndVector;
+            const localNextDirection = index < frames.length - 1 ? frames[index + 1].normal : frames[frames.length - 1].normal;
+            const localNextUVPatternVector = index < frames.length - 1 ? new Vector2(frames[index + 1].length * uDelta, frames[index + 1].position.y * uDelta): new Vector2(frames[frames.length - 1].length * uDelta, frames[frames.length - 1].position.y * uDelta);
+
             for (let i = 0; i < divisions; i++) {
                 directionA.push(...normal.asArray());
                 directionB.push(...biNormal.asArray());
@@ -106,10 +137,18 @@ export class ParallelTransportMesh extends Mesh {
                 positions.push(...p.asArray());
                 uvs.push(u, v);
                 directions.push(...d.asArray());
+
+                previousPosition.push(...localPreviousPosition.asArray());
+                previousUVPattern.push(...localPreviousDirection.asArray());
+                previousDirection.push(...localPreviousUVPatternVector.asArray());
+
+                nextPosition.push(...localNextPosition.asArray());
+                nextUVPattern.push(...localNextDirection.asArray());
+                nextDirection.push(...localNextUVPatternVector.asArray());
             }
         });
 
-        return {positions, uvs, directions, directionA, directionB, patternUV};
+        return {positions, uvs, directions, directionA, directionB, patternUV, previousPosition, previousUVPattern, previousDirection, nextPosition, nextUVPattern, nextDirection};
     }
 
     _constructRawTangents(curvePoints: Vector3[], isClosed = false): Vector3[] {
