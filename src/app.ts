@@ -18,6 +18,13 @@ class App {
         canvas.id = "gameCanvas";
         document.body.appendChild(canvas);
         document.body.style.margin = "0px";
+
+        const gl = canvas.getContext('webgl', { preserveDrawingBuffer: false });   // WebGL 2
+        console.log(gl);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     
         // initialize babylon scene and engine
         var engine = new Engine(canvas, true);
@@ -41,7 +48,7 @@ class App {
         let time = 0.;
 
         const spacing = 4.;
-        const count = 50;
+        const count = 100;
         const offset = spacing * count * .5
 
 
