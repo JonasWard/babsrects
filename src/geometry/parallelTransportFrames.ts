@@ -5,7 +5,7 @@ export class ParallelTransportMesh extends Mesh {
     constructor(curvePoints: Vector3[], radius = 1.5, divisions: number, material: ShaderMaterial | undefined, scene: Scene) {
         super("parallelTransportMesh", scene);
 
-        const {positions, uvs, directions, directionA, directionB} = this._constructPositions(curvePoints, radius, divisions);
+        const {positions, uvs, directions, directionA, directionB, patternUV} = this._constructPositions(curvePoints, radius, divisions);
         const indices = this._indices(divisions, curvePoints.length);
 
         const vertexData = new VertexData();
@@ -22,6 +22,9 @@ export class ParallelTransportMesh extends Mesh {
 
         const deformRefBufferB = new Buffer(scene.getEngine(), directionB, false, 3);
         this.setVerticesBuffer(deformRefBufferB.createVertexBuffer("directionB", 0, 3));
+
+        const patterUVBuffer = new Buffer(scene.getEngine(), patternUV, false, 2);
+        this.setVerticesBuffer(patterUVBuffer.createVertexBuffer("patternUV", 0, 2));
 
         if (material) {
             this.material = material;
@@ -54,13 +57,15 @@ export class ParallelTransportMesh extends Mesh {
     _constructPositions(curvePoints: Vector3[], radius = 1., divisions = 8, uvScale = 2.) {
         const frames = this._constructFrames(curvePoints);
 
+        // console.log(frames.map(f => f.length))
+
         const ns = [];
         const bns = [];
         const vs = [];
 
         const alphaDelta = 2 * Math.PI / divisions;
         const vDelta = uvScale / divisions;
-        const uDelta = ( 2.0 * Math.PI) / vDelta;
+        const uDelta = uvScale / ( 2.0 * Math.PI * radius);
 
         for (let i = 0; i < divisions; i++) {
             const alpha = i * alphaDelta;
@@ -74,12 +79,19 @@ export class ParallelTransportMesh extends Mesh {
         const positions = [];
         const uvs = [];
         const directions = [];
-        const patternUVs = [];
+        const patternUV = [];
+
+        // console.log(ns);
+        // console.log(vs);
+
+        // const localVs = [];
+        // const localUs = [];
 
         frames.forEach(frame => {
             const {normal, biNormal, length, position} = frame;
 
             const u = length * uDelta;
+            const vPattern = position.y * uDelta;
             for (let i = 0; i < divisions; i++) {
                 directionA.push(...normal.asArray());
                 directionB.push(...biNormal.asArray());
@@ -89,14 +101,15 @@ export class ParallelTransportMesh extends Mesh {
                 const d = nM.add(bNM);
                 const p = position.add(d.scale(radius));
                 const v = vs[i];
-
+                
+                patternUV.push(u, vPattern);
                 positions.push(...p.asArray());
                 uvs.push(u, v);
                 directions.push(...d.asArray());
             }
         });
 
-        return {positions, uvs, directions, directionA, directionB};
+        return {positions, uvs, directions, directionA, directionB, patternUV};
     }
 
     _constructRawTangents(curvePoints: Vector3[], isClosed = false): Vector3[] {

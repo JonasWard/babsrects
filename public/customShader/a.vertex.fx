@@ -6,6 +6,7 @@ attribute vec2 uv;
 attribute vec3 normal;
 attribute vec3 directionA;
 attribute vec3 directionB;
+attribute vec2 patternUV;
 
 // Uniforms
 uniform mat4 worldViewProjection;
@@ -98,7 +99,7 @@ float sdPerlin(vec3 p, float scale) {
 }
 
 float distanceFunction() {
-    return cnoise(vec3(uv.x * .0005, position.y * .05, time)) * 20.;
+    return cnoise(vec3(patternUV * .5, time)) * 20.;
 }
 
 void main(void) {
