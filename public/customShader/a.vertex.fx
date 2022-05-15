@@ -3,18 +3,22 @@ precision highp float;
 // Attributes
 attribute vec3 position;
 attribute vec2 uv;
-attribute vec3 normalRef;
+attribute vec3 normal;
+attribute vec3 directionA;
+attribute vec3 directionB;
 
 // Uniforms
 uniform mat4 worldViewProjection;
 uniform float time;
 
 // Varying
-varying vec2 vUV;
+varying vec3 normalVec;
+varying vec3 positionVec;
 
 void main(void) {
-    vec4 localPosition = vec4(position + normalRef * (( .5 + .5 *  sin(uv.y * 6.28 + time / 4.0)) + ( .25 + .25 *  sin(uv.y * 6.283 * 5. + time / 4.0)) + ( .1 + .1 *  sin(uv.y * 314.15 + time / 4.0))), 1.0);
+    vec4 localPosition = vec4(position + directionA * (10. * sin(position.x * .1 + time)) + directionA * (5. * sin(uv.x * .002 + time) ), 1.0);
     gl_Position = worldViewProjection * localPosition;
 
-    vUV = vec2(mod(localPosition.xz / 100., 1.0));
+    positionVec = gl_Position.xyz;
+    normalVec = normal;
 }

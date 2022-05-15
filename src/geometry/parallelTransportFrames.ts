@@ -1,12 +1,11 @@
 import { Buffer, Mesh, Scene, ShaderMaterial, Vector3, VertexData } from "@babylonjs/core";
-import { createCustomShader } from "./dynamicShader";
 
 export class ParallelTransportMesh extends Mesh {
 
-    constructor(curvePoints: Vector3[], radius = 1.5, divisions: number, scene: Scene) {
+    constructor(curvePoints: Vector3[], radius = 1.5, divisions: number, material: ShaderMaterial | undefined, scene: Scene) {
         super("parallelTransportMesh", scene);
 
-        const {positions, uvs, directions} = this._constructPositions(curvePoints, radius, divisions);
+        const {positions, uvs, directions, directionA, directionB} = this._constructPositions(curvePoints, radius, divisions);
         const indices = this._indices(divisions, curvePoints.length);
 
         const vertexData = new VertexData();
@@ -14,24 +13,19 @@ export class ParallelTransportMesh extends Mesh {
         vertexData.positions = positions;
         vertexData.uvs = uvs;
         vertexData.indices = indices;
+        vertexData.normals = directions;
 
         vertexData.applyToMesh(this);
 
-        console.log(`position count: ${positions.length / 3}`);
-        console.log(`face count: ${indices.length / 3}`);
+        const deformRefBufferA = new Buffer(scene.getEngine(), directionA, false, 3);
+        this.setVerticesBuffer(deformRefBufferA.createVertexBuffer("directionA", 0, 3));
 
-        const normalVertexBuffer = new Buffer(scene.getEngine(), directions, false, 3);
-        this.setVerticesBuffer(normalVertexBuffer.createVertexBuffer("normalRef", 0, 3));
+        const deformRefBufferB = new Buffer(scene.getEngine(), directionB, false, 3);
+        this.setVerticesBuffer(deformRefBufferB.createVertexBuffer("directionB", 0, 3));
 
-        this.material = createCustomShader(scene) as ShaderMaterial;
-
-        let time = 0.0;
-    
-        scene.registerBeforeRender(() => {
-            // @ts-ignore
-            this.material.setFloat("time", time);
-            time +=0.1;
-        });
+        if (material) {
+            this.material = material;
+        }   
     }
 
     _indices(divisions: number, n: number) {
@@ -75,15 +69,21 @@ export class ParallelTransportMesh extends Mesh {
             vs.push(i * vDelta);
         }
 
+        const directionA = [];
+        const directionB = []
         const positions = [];
         const uvs = [];
         const directions = [];
+        const patternUVs = [];
 
         frames.forEach(frame => {
             const {normal, biNormal, length, position} = frame;
 
             const u = length * uDelta;
             for (let i = 0; i < divisions; i++) {
+                directionA.push(...normal.asArray());
+                directionB.push(...biNormal.asArray());
+
                 const nM = normal.scale(ns[i]);
                 const bNM = biNormal.scale(bns[i]);
                 const d = nM.add(bNM);
@@ -96,7 +96,7 @@ export class ParallelTransportMesh extends Mesh {
             }
         });
 
-        return {positions, uvs, directions};
+        return {positions, uvs, directions, directionA, directionB};
     }
 
     _constructRawTangents(curvePoints: Vector3[], isClosed = false): Vector3[] {

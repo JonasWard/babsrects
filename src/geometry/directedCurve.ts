@@ -24,3 +24,53 @@ export function createDirectedCurve(startPoint: Vector3, startDirectionAngles: {
 
     return curvePoints;
 }
+
+export function createHelixicalCurve(startPoint: Vector3, amplitude: number, periodLength: number, resolution: number, count) {
+    const curvePoints = [];
+
+    const alphaDelta = Math.PI * resolution;
+    const yStep = periodLength / Math.PI * resolution;
+    let alpha = 0.;
+
+    for (let i = 0; i < count; i++) {
+        curvePoints.push(new Vector3(
+            startPoint.x + amplitude * Math.sin(alpha),
+            startPoint.y + yStep * i,
+            startPoint.z + amplitude * Math.cos(alpha)
+        ));
+
+        alpha += alphaDelta;
+    };
+
+    return curvePoints;
+} 
+
+export function createSinoidCurve(startPoint: Vector3, amplitude: number, periodLength: number, resolution: number, count) {
+    const curvePoints = [];
+
+    const alphaDelta = Math.PI * resolution;
+    const yStep = periodLength / Math.PI * resolution;
+    let alpha = 0.;
+
+    for (let i = 0; i < count; i++) {
+        curvePoints.push(new Vector3(
+            startPoint.x + amplitude * Math.sin(alpha),
+            0.,
+            startPoint.y + yStep * i,
+        ));
+
+        alpha += alphaDelta;
+    };
+
+    return curvePoints;
+}
+
+export function createCurveSet(startPoint: Vector3, movementDirection: Vector3, step: number = 1., count: number = 100) {
+    const curvePoints = [];
+    
+    for (let i = 0; i < count; i++) {
+        curvePoints.push(startPoint.add(movementDirection.scale(i * step)));
+    }
+
+    return curvePoints;
+}
