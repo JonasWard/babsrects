@@ -97,9 +97,12 @@ float sdPerlin(vec3 p, float scale) {
     return d;
 }
 
+float distanceFunction() {
+    return cnoise(vec3(uv.x * .0005, position.y * .05, time)) * 20.;
+}
+
 void main(void) {
-    float shiftLength = cnoise(vec3(uv.x * .0005, position.y * .05, time)) * 100.;
-    vec4 localPosition = vec4(position + directionA * shiftLength , 1.0);
+    vec4 localPosition = vec4(position + directionA * distanceFunction() , 1.0);
     gl_Position = worldViewProjection * localPosition;
 
     positionVec = gl_Position.xyz;
