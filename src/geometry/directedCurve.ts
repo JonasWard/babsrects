@@ -74,3 +74,15 @@ export function createCurveSet(startPoint: Vector3, movementDirection: Vector3, 
 
     return curvePoints;
 }
+
+export function createCircle(center: Vector3 = new Vector3(0,0,0), radius: number = 5., divisions: number = 100) {
+    const curvePoints = [];
+    const angleDelta = Math.PI * 2. / divisions;
+    
+    for (let i = 0; i < divisions; i++) {
+        const angle = angleDelta * i;
+        curvePoints.push(center.add(new Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)));
+    }
+
+    return curvePoints;
+}

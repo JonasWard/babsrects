@@ -5,7 +5,7 @@ import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBu
 import { DynamicSurface } from "./geometry/dynamicSurface";
 import { createCustomShader } from "./geometry/dynamicShader";
 import { ParallelTransportMesh } from "./geometry/parallelTransportFrames";
-import { createCurveSet, createDirectedCurve, createSinoidCurve } from "./geometry/directedCurve";
+import { createCircle, createCurveSet, createDirectedCurve, createSinoidCurve } from "./geometry/directedCurve";
 
 class App {
     constructor() {
@@ -48,13 +48,14 @@ class App {
         let time = 0.;
 
         const spacing = 4.;
-        const count = 100;
+        const count = 500;
         const offset = spacing * count * .5
 
 
         for (let i = 0; i < count; i ++) {
-            const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
-            const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 16, material, 2.5, scene);
+            const pts = createCircle(new Vector3(0, i * spacing, 0), 250., 200)
+            // const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
+            const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 8, material, 2.5, scene);
         }
 
         // const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
