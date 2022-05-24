@@ -111,35 +111,45 @@ float sdPerlin(vec3 p, float scale) {
 }
 
 float distanceFunction(vec2 localPatternUV) {
-    return cnoise(vec3(localPatternUV * .2, time)) * 25.;
+    return cnoise(vec3(localPatternUV * .1, time)) * 50.;
 }
 
-vec3 normalCalculation() {
-    vec3 localPreviousPosition = previousPosition + previousDirection * distanceFunction(previousUVPattern);
-    vec3 localNextPosition = nextPosition + nextDirection * distanceFunction(nextUVPattern);
-    vec3 p = normalize(localPreviousPosition - position);
-    vec3 n = normalize(localNextPosition - position);
+vec3 customDistanceFunction(vec3 startPosition, vec3 direction, vec2 uv) {
+    return startPosition + direction * distanceFunction(uv);
+}
 
-    float angle = mod(atan(p.z, -p.x) - atan(n.z, -n.x) + TAU, TAU) * .5;
+vec3 normalCalculation(vec3 curentPosition, vec3 previousPosition, vec3 nextPosition, vec3 previousDirection, vec3 nextDirection, vec2 nextUV, vec2 previousUV) {
+    vec3 localPreviousPosition = customDistanceFunction(previousPosition, previousDirection, previousUV);
+    vec3 localNextPosition = nextPosition + nextDirection * distanceFunction(nextUV);
+    vec3 p = normalize(localPreviousPosition - curentPosition);
+    vec3 n = normalize(localNextPosition - curentPosition);
+
+    float angle = mod(atan(p.x, p.z) - atan(n.x, n.z) + TAU, TAU) * .5;
 
     float zxL = length(normal.zx);
     float dirL = length(n.zx);
-    float lM = dirL / zxL;
+
+    float lM;
+    if (zxL < 0.001) {
+        lM = 1.0;
+    } else {
+        lM = dirL / zxL;
+    }
+    
     float cA = cos(angle);
     float sA = sin(angle);
 
-    float x = n.x * cA + n.z * sA;
-    float z = n.x * sA - n.z * cA;
+    float x = n.x * cA - n.z * sA;
+    float z = n.x * sA + n.z * cA;
 
-    // return vec3(0.,0.,0.);
     return vec3(x * lM, normal.y, z * lM);
 }
 
 void main(void) {
     vec3 localInterimPosition = position + directionA * distanceFunction(patternUV);
-    normalVec = normalCalculation();
+    normalVec = normalCalculation(localInterimPosition, previousDirection, nextPosition, previousDirection, nextDirection, nextUVPattern, previousUVPattern);
     // normalVec = normal;
-    
+
     letsColor = patternUV;
     vec4 localPosition = vec4(localInterimPosition , 1.0);
     gl_Position = worldViewProjection * localPosition;

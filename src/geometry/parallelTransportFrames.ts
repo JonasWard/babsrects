@@ -76,7 +76,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-      deformRefBufferA.createVertexBuffer('previousPosition', 0, 3)
+        previousPositionBuffer.createVertexBuffer('previousPosition', 0, 3)
     );
 
     const previousDirectionBuffer = new Buffer(
@@ -86,7 +86,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-      deformRefBufferA.createVertexBuffer('previousDirection', 0, 3)
+        previousDirectionBuffer.createVertexBuffer('previousDirection', 0, 3)
     );
 
     const previousUVPatternBuffer = new Buffer(
@@ -96,7 +96,7 @@ export class ParallelTransportMesh extends Mesh {
       2
     );
     this.setVerticesBuffer(
-      patterUVBuffer.createVertexBuffer('previousUVPattern', 0, 2)
+      previousUVPatternBuffer.createVertexBuffer('previousUVPattern', 0, 2)
     );
 
     const nextPositionBuffer = new Buffer(
@@ -106,7 +106,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-      deformRefBufferA.createVertexBuffer('nextPosition', 0, 3)
+        nextPositionBuffer.createVertexBuffer('nextPosition', 0, 3)
     );
 
     const nextDirectionBuffer = new Buffer(
@@ -116,7 +116,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-      deformRefBufferA.createVertexBuffer('nextDirection', 0, 3)
+      nextDirectionBuffer.createVertexBuffer('nextDirection', 0, 3)
     );
 
     const nextUVPatternBuffer = new Buffer(
@@ -126,7 +126,7 @@ export class ParallelTransportMesh extends Mesh {
       2
     );
     this.setVerticesBuffer(
-      patterUVBuffer.createVertexBuffer('nextUVPattern', 0, 2)
+      nextUVPatternBuffer.createVertexBuffer('nextUVPattern', 0, 2)
     );
 
     if (material) {
@@ -225,7 +225,7 @@ export class ParallelTransportMesh extends Mesh {
           localPreviousPosition = previousStartVector;
           localPreviousDirection = normal;
           localPreviousUVPatternVector = new Vector2(
-            (length - 1.) * uDelta,
+            -1 * uDelta,
             position.y * uDelta
           );
           break;
@@ -248,7 +248,7 @@ export class ParallelTransportMesh extends Mesh {
           localNextPosition = nextEndVector;
           localNextDirection = frames[frames.length - 1].normal;
           localNextUVPatternVector = new Vector2(
-            (length + 1.) * uDelta,
+            (length + 1) * uDelta,
             position.y * uDelta
           );
           break;
@@ -278,12 +278,12 @@ export class ParallelTransportMesh extends Mesh {
         directions.push(...d.asArray());
 
         previousPosition.push(...localPreviousPosition.asArray());
-        previousUVPattern.push(...localPreviousDirection.asArray());
-        previousDirection.push(...localPreviousUVPatternVector.asArray());
+        previousDirection.push(...localPreviousDirection.asArray());
+        previousUVPattern.push(...localPreviousUVPatternVector.asArray());
 
         nextPosition.push(...localNextPosition.asArray());
-        nextUVPattern.push(...localNextDirection.asArray());
-        nextDirection.push(...localNextUVPatternVector.asArray());
+        nextDirection.push(...localNextDirection.asArray());
+        nextUVPattern.push(...localNextUVPatternVector.asArray());
       }
     });
 
