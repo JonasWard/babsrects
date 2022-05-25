@@ -53,7 +53,7 @@ class App {
 
 
         for (let i = 0; i < count; i ++) {
-            const pts = createCircle(new Vector3(0, i * spacing, 0), 250., 200)
+            const pts = createCircle(new Vector3(0, (i - count * .5) * spacing, 0), 250., 500)
             // const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
             const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 8, material, 2.5, scene);
         }

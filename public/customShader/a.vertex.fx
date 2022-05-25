@@ -35,6 +35,15 @@ vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
 
+float sdSchwarzD(vec3 p, float scale) {
+    p *= scale;
+    vec3 s = sin(p);
+    vec3 c = cos(p);
+    float d = s.x * s.y * s.z + s.x * c.y * c.z + c.x * s.y * c.z + c.x * c.y * s.z;
+    d *= .3333;
+	return d;
+}
+
 // position shiftig function
 float cnoise(vec3 P){
   vec3 Pi0 = floor(P); // Integer part for indexing
@@ -110,19 +119,25 @@ float sdPerlin(vec3 p, float scale) {
     return d;
 }
 
-float distanceFunction(vec2 localPatternUV) {
+float distanceFunction3d(vec3 position) {
+    return sdSchwarzD(position, .5 * (1. + sin(time * .1))) * 10.;
+}
+
+float distanceFunctionPattern(vec2 localPatternUV) {
     return cnoise(vec3(localPatternUV * .1, time)) * 50.;
 }
 
-vec3 customDistanceFunction(vec3 startPosition, vec3 direction, vec2 uv) {
-    return startPosition + direction * distanceFunction(uv);
+vec3 customDistanceFunctionPattern(vec3 startPosition, vec3 direction, vec2 uv) {
+    return startPosition + direction * distanceFunctionPattern(uv);
 }
 
-vec3 normalCalculation(vec3 curentPosition, vec3 previousPosition, vec3 nextPosition, vec3 previousDirection, vec3 nextDirection, vec2 nextUV, vec2 previousUV) {
-    vec3 localPreviousPosition = customDistanceFunction(previousPosition, previousDirection, previousUV);
-    vec3 localNextPosition = nextPosition + nextDirection * distanceFunction(nextUV);
-    vec3 p = normalize(localPreviousPosition - curentPosition);
-    vec3 n = normalize(localNextPosition - curentPosition);
+vec3 customDistanceFunction3d(vec3 startPosition, vec3 direction) {
+    return startPosition + direction * distanceFunction3d(startPosition);
+}
+
+vec3 normalCalculation(vec3 dirA, vec3 dirB) {
+    vec3 p = normalize(dirA);
+    vec3 n = normalize(dirB);
 
     float angle = mod(atan(p.x, p.z) - atan(n.x, n.z) + TAU, TAU) * .5;
 
@@ -145,9 +160,29 @@ vec3 normalCalculation(vec3 curentPosition, vec3 previousPosition, vec3 nextPosi
     return vec3(x * lM, normal.y, z * lM);
 }
 
+vec3 normalCalculation3dDistance(vec3 curentPosition, vec3 previousPosition, vec3 nextPosition, vec3 previousDirection, vec3 nextDirection) {
+    vec3 localPreviousPosition = customDistanceFunction3d(previousPosition, previousDirection);
+    vec3 localNextPosition = customDistanceFunction3d(nextPosition, nextDirection);
+    vec3 dirA = localPreviousPosition - curentPosition;
+    vec3 dirB = localNextPosition - curentPosition;
+
+    return normalCalculation(dirA, dirB);
+}
+
+vec3 normalCalculationUVPattern(vec3 curentPosition, vec3 previousPosition, vec3 nextPosition, vec3 previousDirection, vec3 nextDirection, vec2 nextUV, vec2 previousUV) {
+    vec3 localPreviousPosition = customDistanceFunctionPattern(previousPosition, previousDirection, previousUV);
+    vec3 localNextPosition = customDistanceFunctionPattern(nextPosition, nextDirection, nextUV);
+    vec3 dirA = localPreviousPosition - curentPosition;
+    vec3 dirB = localNextPosition - curentPosition;
+
+    return normalCalculation(dirA, dirB);
+}
+
 void main(void) {
-    vec3 localInterimPosition = position + directionA * distanceFunction(patternUV);
-    normalVec = normalCalculation(localInterimPosition, previousDirection, nextPosition, previousDirection, nextDirection, nextUVPattern, previousUVPattern);
+    // vec3 localInterimPosition = position + directionA * distanceFunctionPattern(patternUV);
+    vec3 localInterimPosition = position + directionA * distanceFunction3d(position);
+    // normalVec = normalCalculationUVPattern(localInterimPosition, previousDirection, nextPosition, previousDirection, nextDirection, nextUVPattern, previousUVPattern);
+    normalVec = normalCalculation3dDistance(localInterimPosition, previousDirection, nextPosition, previousDirection, nextDirection);
     // normalVec = normal;
 
     letsColor = patternUV;
