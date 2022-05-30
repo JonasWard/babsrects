@@ -120,7 +120,7 @@ float sdPerlin(vec3 p, float scale) {
 }
 
 float distanceFunction3d(vec3 position) {
-    return sdSchwarzD(position, .5 * (1. + sin(time * .1))) * 10.;
+    return sdSchwarzD(position, .2 * (1.2 + sin(time * .2))) * 10.;
 }
 
 float distanceFunctionPattern(vec2 localPatternUV) {

@@ -79,7 +79,7 @@ export function createCircle(center: Vector3 = new Vector3(0,0,0), radius: numbe
     const curvePoints = [];
     const angleDelta = Math.PI * 2. / divisions;
     
-    for (let i = 0; i < divisions; i++) {
+    for (let i = 0; i < divisions + 1; i++) {
         const angle = angleDelta * i;
         curvePoints.push(center.add(new Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)));
     }
