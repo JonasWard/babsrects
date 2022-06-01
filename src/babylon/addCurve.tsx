@@ -20,16 +20,19 @@ export const addCurve = (scene: Scene, canvas: HTMLCanvasElement, material: Shad
 
     let time = 0.;
 
-    const spacing = 4.;
-    const count = 500;
-    const offset = spacing * count * .5
+    const spacing = 5.;
+    const rowCount = 100;
+    const vCount = 15;
+    const uCount = 250;
+    const offset = spacing * rowCount * .5
 
-
-    for (let i = 0; i < count; i ++) {
-        const pts = createCircle(new Vector3(0, (i - count * .5) * spacing, 0), 250., 500)
+    for (let i = 0; i < rowCount; i ++) {
+        const pts = createCircle(new Vector3(0, (i - rowCount * .5) * spacing, 0), 250., uCount)
         // const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
-        const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, 8, material, 2.5, scene);
+        const parallelTransportMesh = new ParallelTransportMesh(pts, spacing * .55, vCount, material, 2.5, scene);
     }
+
+    console.log(`vertexCount: ${vCount * rowCount * uCount}`)
 
     // const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
 

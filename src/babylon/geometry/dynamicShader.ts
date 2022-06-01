@@ -1,13 +1,35 @@
-import { Effect, Scene, ShaderMaterial } from "@babylonjs/core";
+import { Effect, Scene, ShaderMaterial } from '@babylonjs/core';
 
-export function createCustomShader(scene: Scene){
-    return new ShaderMaterial("shader", scene, {
-    vertex: "./customShader/a",
-    fragment: "./customShader/a",
+export function createCustomShader(scene: Scene, materialName: string = 'a') {
+  return new ShaderMaterial(
+    'shader',
+    scene,
+    {
+      vertex: materialName,
+      fragment: materialName,
     },
     {
-        attributes: ["position", "normal", "uv", "directionA", "directionB", "patternUV", "previousPosition", "previousDirection", "previousUVPattern", "nextPosition", "nextDirection", "nextUVPattern"],
-        uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
+      attributes: [
+        'position',
+        'normal',
+        'uv',
+        'directionA',
+        'directionB',
+        'patternUV',
+        'previousPosition',
+        'previousDirection',
+        'previousUVPattern',
+        'nextPosition',
+        'nextDirection',
+        'nextUVPattern',
+      ],
+      uniforms: [
+        'world',
+        'worldView',
+        'worldViewProjection',
+        'view',
+        'projection',
+      ],
     }
-    );
+  );
 }

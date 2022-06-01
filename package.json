@@ -2,6 +2,7 @@
   "name": "babsrects",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://jonaward.github.io/babsrects",
   "dependencies": {
     "@babylonjs/core": "^4.2.2",
     "@testing-library/jest-dom": "^5.16.2",
@@ -11,6 +12,7 @@
     "@types/node": "^16.11.26",
     "@types/react": "^17.0.40",
     "@types/react-dom": "^17.0.13",
+    "gh-pages": "^4.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "5.0.0",
@@ -18,7 +20,9 @@
   },
   "scripts": {
     "build": "webpack",
-    "start": "webpack-dev-server --port 8080"
+    "start": "webpack-dev-server --port 8080",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d dist"
   },
   "eslintConfig": {
     "extends": [
