@@ -1,12 +1,13 @@
-import { Effect, Scene, ShaderMaterial } from '@babylonjs/core';
+import {Scene, ShaderMaterial } from '@babylonjs/core';
+import { CUSTOM_SHADER_NAME } from '../Renderer';
 
-export function createCustomShader(scene: Scene, materialName: string = 'a') {
+export function createCustomShader(scene: Scene, shaderName = 'a') {
   return new ShaderMaterial(
-    'shader',
+    'shader'+shaderName,
     scene,
     {
-      vertex: materialName,
-      fragment: materialName,
+      vertex: CUSTOM_SHADER_NAME + shaderName,
+      fragment: CUSTOM_SHADER_NAME + shaderName,
     },
     {
       attributes: [

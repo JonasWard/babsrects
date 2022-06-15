@@ -4,10 +4,11 @@ import { addCurve } from './addCurve';
 import { createCustomShader } from './geometry/dynamicShader';
 import SceneComponent from './scene';
 
+export const CUSTOM_SHADER_NAME = 'customShaderName';
 let material: ShaderMaterial;
 let time = 0;
 
-export const updateMaterial = (scene: Scene, materialName: string = 'a') => {
+export const updateMaterial = (scene: Scene, materialName='a') => {
   material = createCustomShader(scene, materialName) as ShaderMaterial;
   return material;
 };

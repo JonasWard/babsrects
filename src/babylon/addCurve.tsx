@@ -34,16 +34,6 @@ export const addCurve = (scene: Scene, canvas: HTMLCanvasElement, material: Shad
 
     console.log(`vertexCount: ${vCount * rowCount * uCount}`)
 
-    // const sound = new Sound("name", "soviet-anthem.mp3", scene, null, { loop: true, autoplay: true });
-
-    // scene.registerBeforeRender(() => {
-    //     time += .01666;
-    //     // @ts-ignore
-    //     material.setFloat("time", time);
-    // });
-
-    // console.log(scene.getTotalVertices());
-
     // hide/show the Inspector
     window.addEventListener("keydown", (ev) => {
         // Shift+Ctrl+Alt+I

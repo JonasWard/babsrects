@@ -178,6 +178,10 @@ vec3 normalCalculationUVPattern(vec3 curentPosition, vec3 previousPosition, vec3
     return normalCalculation(dirA, dirB);
 }
 
+// ToDo add way to easily update the distance function itself
+// either through string or through import
+// shaders need to be recompiled anyway so string probably is the easiest option
+
 void main(void) {
     // vec3 localInterimPosition = position + directionA * distanceFunctionPattern(patternUV);
     vec3 localInterimPosition = position + directionA * distanceFunction3d(position);

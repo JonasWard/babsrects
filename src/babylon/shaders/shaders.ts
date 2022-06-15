@@ -209,7 +209,6 @@ export default {
             gl_FragColor = vec4(normalVec, 1.0);
         }`
     },
-
     b: {
         vertex: `precision highp float;
 

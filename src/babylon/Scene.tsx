@@ -1,27 +1,35 @@
 import { useEffect, useRef } from 'react';
-import { Effect, Engine, Mesh, Scene, ShaderMaterial } from '@babylonjs/core';
+import { Effect, Engine, Scene } from '@babylonjs/core';
 import * as React from 'react';
-import { updateMaterial } from './Renderer';
+import { CUSTOM_SHADER_NAME, updateMaterial } from './Renderer';
 import shaders from './shaders/shaders';
 
 const materialStates = Object.keys(shaders);
 
-const registerMaterials = (shaders: {
-  [name: string]: { vertex: string; fragment: string };
-}) => {
-  Object.entries(shaders).forEach(([name, shaders]) => {
-    Effect.ShadersStore[name + 'VertexShader'] = shaders.vertex;
-    Effect.ShadersStore[name + 'FragmentShader'] = shaders.fragment;
-  });
+const registerMaterial = (shader: { vertex: string; fragment: string }, shaderName = 'a') => {
+  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'VertexShader'] = shader.vertex;
+  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'FragmentShader'] = shader.fragment;
 };
 
 const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
-  const localMaterial = updateMaterial(scene, materialName);
-  scene.geometries.forEach((geo) => {
-    geo.meshes.forEach((mesh) => {
-      mesh.material = localMaterial;
+  console.log(
+    `trying to update the custom shader parameters using the parameters for ${materialName}`
+  );
+
+  registerMaterial(shaders[materialName], materialName);
+
+  // setTimeout(() => {
+    console.log(Effect.ShadersStore);
+
+    const localMaterial = updateMaterial(scene, materialName);
+
+    console.log(localMaterial);
+    scene.geometries.forEach((geo) => {
+      geo.meshes.forEach((mesh) => {
+        mesh.material = localMaterial;
+      });
     });
-  });
+  // }, 100);
 };
 
 const ShaderButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
@@ -47,10 +55,10 @@ export default ({
   const [materialIndex, setMaterialIndex] = React.useState(0);
   const [scene, setScene] = React.useState(new Scene(new Engine(null)));
 
-  registerMaterials(shaders); 
+  // registerMaterials(shaders);
 
   const changeMaterialState = () => {
-    const localMaterialIndex = materialIndex + (1 % materialStates.length);
+    const localMaterialIndex = (materialIndex + 1) % materialStates.length;
     setMaterialName(materialStates[localMaterialIndex]);
     setMaterialIndex(localMaterialIndex);
   };
