@@ -1,4 +1,4 @@
-import { Vector3 } from '@babylonjs/core';
+import { Mesh, Scene, Vector3, VertexBuffer, VertexData } from '@babylonjs/core';
 import { v4 } from 'uuid';
 
 type IVector = { x: number; y: number; z: number };
@@ -24,6 +24,18 @@ class VolumetricVertex {
   public removeHalfEdge = (he: HalfEdge) => this.halfEdges.delete(he);
 
   public asIVector = (): IVector => toIVector(this.position);
+
+  public positionAsArray = (): [number, number, number] => [this.position.x, this.position.y, this.position.z];
+
+  public getHalfEdges = (): HalfEdge[] => Array.from(this.halfEdges);
+
+  public getFaces = (): VolumetricFace[] =>
+    this.getHalfEdges().map((he) => he.face);
+
+  public getNormal = (): Vector3 =>
+    this.getFaces()
+      .reduce((acc, f) => acc.add(f.getNormal()), new Vector3(0, 0, 0))
+      .scale(1 / this.halfEdges.size);
 }
 
 class HalfEdge {
@@ -48,18 +60,18 @@ class HalfEdge {
     console.warn(
       'this edge does not have a previous edge defined, can not calculate its direction vector'
     );
-  }
+  };
 
   public setVertex = (vertex: VolumetricVertex) => {
     if (this.vertex) this.vertex.removeHalfEdge(this);
     this.vertex = vertex;
     this.vertex.addHalfEdge(this);
-  }
+  };
 
   public setPair = (other: HalfEdge) => {
     this.opposite = other;
     other.opposite = this;
-  }
+  };
 
   public setNext = (next: HalfEdge) => {
     this.next = next;
@@ -99,13 +111,15 @@ class VolumetricFace {
   public setEdges = (edges: HalfEdge[]) => {
     this.edges = edges;
     edges.forEach((edge) => edge.setFace(this));
-  }
+  };
 
   public isClosed = (): boolean => this.edges.every((edge) => edge.opposite);
 
-  public getNakedEdges = (): HalfEdge[] => this.edges.filter((edge) => edge.isNaked());
+  public getNakedEdges = (): HalfEdge[] =>
+    this.edges.filter((edge) => edge.isNaked());
 
-  public getCoveredEdges = (): HalfEdge[] => this.edges.filter((edge) => !edge.isNaked());
+  public getCoveredEdges = (): HalfEdge[] =>
+    this.edges.filter((edge) => !edge.isNaked());
 
   public getInteralNeighbours = (): VolumetricFace[] => {
     const internalNeighbours = [];
@@ -115,7 +129,7 @@ class VolumetricFace {
     });
 
     return internalNeighbours;
-  }
+  };
 
   public constructNeighbourMap(
     checkedEdges: Set<HalfEdge>,
@@ -131,16 +145,22 @@ class VolumetricFace {
     }
   }
 
-  public getPolygons = (): IVector[] => this.edges.map((edge) => edge.vertex.asIVector());
+  public _vertexPolygon = (): VolumetricVertex[] =>
+    this.edges.map((edge) => edge.vertex);
+
+  public _idPolygon = (): string[] => this._vertexPolygon().map((v) => v.id);
+
+  public getPolygon = (): IVector[] =>
+    this._vertexPolygon().map((v) => v.asIVector());
 
   public getCenter = (): Vector3 => {
     let center = new Vector3(0, 0, 0);
 
     this.edges.forEach((edge) => (center = center.add(edge.vertex.position)));
     return center.scale(1 / this.edges.length);
-  }
+  };
 
-  public getNorma = (): Vector3 | undefined => {
+  public getNormal = (): Vector3 | undefined => {
     if (this.edges.length < 3) return;
     if (!this.isClosed()) return;
 
@@ -151,9 +171,17 @@ class VolumetricFace {
       const normal = edge1dir.cross(edge0dir);
       if (normal.length() > 0.00001) return normal.normalizeToNew();
     }
-  }
+  };
 
   public toCell = (size: number): VolumetricCell => new VolumetricCell([]);
+
+  public toTriangles = (): string[] => {
+    if (this.edges.length === 3) return this._idPolygon();
+    if (this.edges.length === 4) {
+      const [a, b, c, d] = this._idPolygon();
+      return [a, b, c, a, c, d];
+    } else return [];
+  };
 }
 
 export class VolumetricCell {
@@ -184,7 +212,7 @@ export class VolumetricCell {
     this.faces.forEach((face) => nakedEdges.push(...face.getNakedEdges()));
 
     return nakedEdges;
-  }
+  };
 
   public getCoveredEdges = (): HalfEdge[] => {
     const coveredEdges: HalfEdge[] = [];
@@ -192,11 +220,11 @@ export class VolumetricCell {
     this.faces.forEach((face) => coveredEdges.push(...face.getCoveredEdges()));
 
     return coveredEdges;
-  }
+  };
 
   public getPolygons = (): IVector[][] => {
-    return this.faces.map((face) => face.getPolygons());
-  }
+    return this.faces.map((face) => face.getPolygon());
+  };
 
   public getDualGraph = (): [VolumetricFace, VolumetricFace][] => {
     const facePairs: [VolumetricFace, VolumetricFace][] = [];
@@ -207,20 +235,23 @@ export class VolumetricCell {
     );
 
     return facePairs;
-  }
+  };
 
   public getDualGraphAsLines = (): [IVector, IVector][] => {
     return this.getDualGraph().map((fs) => [
       toIVector(fs[0].getCenter()),
       toIVector(fs[1].getCenter()),
     ]);
-  }
+  };
 
-  public expand = (expansionL: number, withNeighbours = false): VolumetricMesh => {
+  public expand = (
+    expansionL: number,
+    withNeighbours = false
+  ): VolumetricMesh => {
     return new VolumetricMesh(
       this.faces.map((face) => face.toCell(expansionL))
     );
-  }
+  };
 
   public static simplePlanarCell = (
     xCount = 4,
@@ -293,7 +324,38 @@ export class VolumetricCell {
     }
 
     return new VolumetricCell(faces);
+  };
+
+  public getAllVertices = (): VolumetricVertex[] => {
+    const vertices: Set<VolumetricVertex> = new Set();
+
+    this.faces.forEach((face) => face._vertexPolygon().forEach((v) => vertices.add(v)));
+
+    return Array.from(vertices);
   }
+
+  public babylonMesh = (scene: Scene) => {
+    const vertexIdMap: {[key: string]: number} = {};
+    const vertexGeometryArray: number[] = [];
+    const faceVIds: number[] = [];
+
+    this.getAllVertices().forEach((v, i) => {
+      vertexIdMap[v.id] = i;
+      vertexGeometryArray.push(...v.positionAsArray());
+    });
+
+    this.faces.forEach((face) => faceVIds.push(...face.toTriangles().map((id) => vertexIdMap[id])));
+
+    const mesh = new Mesh('volMesh', scene);
+    const vertexDate = new VertexData();
+
+    vertexDate.positions = vertexGeometryArray;
+    vertexDate.indices = faceVIds;
+
+    vertexDate.applyToMesh(mesh); 
+
+    return mesh;
+  };
 }
 
 class VolumetricMesh {
@@ -320,5 +382,5 @@ class VolumetricMesh {
     // constructing the cells
 
     // populating the mesh
-  }
+  };
 }
