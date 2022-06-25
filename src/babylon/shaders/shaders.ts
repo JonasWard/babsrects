@@ -456,6 +456,11 @@ export default {
         vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
         vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
         vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+
+        float sdGyroid(vec3 p, float scale) {
+            p *= scale;
+            return dot(sin(p), cos(p));
+        }
         
         float sdSchwarzD(vec3 p, float scale) {
             p *= scale;
@@ -542,7 +547,7 @@ export default {
         }
         
         float distanceFunction3d(vec3 position) {
-            return sdSchwarzD(position, .2 * (1.2 + sin(time * .2))) * 100.;
+            return sdSchwarzD(position, .001 * sdGyroid(position, .2 * (1.2 + sin(time * .2)))) * 100.;
         }
         
         float distanceFunctionPattern(vec2 localPatternUV) {
@@ -620,12 +625,13 @@ export default {
         varying vec3 positionVec;
         
         varying vec2 letsColor;
-        
+
         void main(void) {
             // mod(time * 0.01, 1.0), 0.
             // vec3 color = vec3(.5) + .5 * normalVec;
             // vec3 color = vec3(mod(letsColor * .1, 1.), 1.);
-            gl_FragColor = vec4(normalVec, 1.0);
-        }`
+            gl_FragColor = vec4(normalVec, 1.);
+        }
+        `
     }
 }
