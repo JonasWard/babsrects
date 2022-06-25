@@ -63,6 +63,8 @@ export const addCurve = (
   console.log(volumetricMesh.getPolygons());
   console.log(volumetricMesh.getDualGraphAsLines());
 
+  volumetricMesh.babylonMesh(scene);
+
   console.log(`vertexCount: ${vCount * rowCount * uCount}`);
 
   // hide/show the Inspector
