@@ -173,8 +173,6 @@ class VolumetricFace {
     }
   };
 
-  public toCell = (size: number): VolumetricCell => new VolumetricCell([]);
-
   public toTriangles = (): string[] => {
     if (this.edges.length === 3) return this._idPolygon();
     if (this.edges.length === 4) {
@@ -182,6 +180,29 @@ class VolumetricFace {
       return [a, b, c, a, c, d];
     } else return [];
   };
+  /**
+   * method that expands a face into a cell
+   * @param size 
+   * @param mesh 
+   * @returns 
+   */
+  public toCell = (size: number, mesh?: VolumetricMesh): VolumetricCell => {
+    // potential scenarios
+    // 1. face creates a set of new faces -> extending the cell instead of creating an extra cell -> mutates the parent volumetric cell
+    // 2. face creates a set of new faces -> and create a new cell -> returns a new cell, stores the cell in this one
+    // Other function
+    // 3. face creates a set of new faces -> and create a new cell for this one and all the other faces of the volumetric cell
+    //    a. the volumetric cell is closed
+    //    b. the volumetric cell is not closed
+
+    // takes the faces halfedges
+
+    // construct new vertices for every vertex related to these halfEdges
+    // or constructs a bunch of vertices for the volumetric cell as a whole
+    const newFaces: VolumetricFace[] = []
+
+    return new VolumetricCell(newFaces);
+  }
 }
 
 export class VolumetricCell {
@@ -299,8 +320,6 @@ export class VolumetricCell {
 
       faceGrid.push(yFaceRow);
     }
-
-    console.log(faceGrid);
 
     // connecting the edges
     // right to left
