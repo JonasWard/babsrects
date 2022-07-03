@@ -3,8 +3,10 @@ import {
   HemisphericLight,
   Scene,
   ShaderMaterial,
+  Vector2,
   Vector3,
 } from '@babylonjs/core';
+import { Growth } from './geometry/differentialGrowth';
 import { createCircle } from './geometry/directedCurve';
 import { createCustomShader } from './geometry/dynamicShader';
 import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
@@ -20,7 +22,7 @@ export const addCurve = (
     'Camera',
     Math.PI / 2,
     Math.PI / 2,
-    2,
+    55,
     Vector3.Zero(),
     scene
   );
@@ -44,28 +46,43 @@ export const addCurve = (
   const uCount = 250;
   const offset = spacing * rowCount * 0.5;
 
-  for (let i = 0; i < rowCount; i++) {
-    const pts = profile(150, 150, 5, i * spacing - offset);
-    // const pts = createCircle(new Vector3(0, (i - rowCount * .5) * spacing, 0), 250., uCount)
-    // const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
-    const parallelTransportMesh = new ParallelTransportMesh(
-      pts,
-      spacing * 0.55,
-      vCount,
-      material,
-      2.5,
-      scene
-    );
-  }
+  // for (let i = 0; i < rowCount; i++) {
+  //   const pts = profile(150, 150, 5, i * spacing - offset);
+  //   // const pts = createCircle(new Vector3(0, (i - rowCount * .5) * spacing, 0), 250., uCount)
+  //   // const pts = createCurveSet(new Vector3(-offset, i *  spacing - offset, -offset), new Vector3(1., 0, 0), 1., 500);
+  //   const parallelTransportMesh = new ParallelTransportMesh(
+  //     pts,
+  //     spacing * 0.55,
+  //     vCount,
+  //     material,
+  //     2.5,
+  //     scene
+  //   );
+  // }
+
+  const pts = createCircle(new Vector3(0, 0, 0), 15., 40).map(v => new Vector2(v.x, v.z));
+  // const pts = [
+  //   new Vector2(5, 5),
+  //   new Vector2(10, 12),
+  //   new Vector2(15, 5),
+  // ]
+
+  // const growth = new Growth({vs: pts})
+
+  // for (let i = 0; i < 400; i++) growth.grow([]);
+
+  // console.log(growth.toString());
+
+  // growth.asPipe(0., .05, material, scene, 8);
 
   const volumetricMesh = VolumetricCell.simplePlanarCell(10, 10, 1);
-  console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
-  console.log(volumetricMesh.getPolygons());
-  console.log(volumetricMesh.getDualGraphAsLines());
+  // console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
+  // console.log(volumetricMesh.getPolygons());
+  // console.log(volumetricMesh.getDualGraphAsLines());
 
   volumetricMesh.babylonMesh(scene);
 
-  console.log(`vertexCount: ${vCount * rowCount * uCount}`);
+  // console.log(`vertexCount: ${vCount * rowCount * uCount}`);
 
   // hide/show the Inspector
   window.addEventListener('keydown', (ev) => {

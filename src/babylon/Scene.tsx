@@ -6,30 +6,30 @@ import shaders from './shaders/shaders';
 
 const materialStates = Object.keys(shaders);
 
-const registerMaterial = (shader: { vertex: string; fragment: string }, shaderName = 'a') => {
-  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'VertexShader'] = shader.vertex;
-  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'FragmentShader'] = shader.fragment;
+const registerMaterial = (
+  shader: { vertex: string; fragment: string },
+  shaderName = 'a'
+) => {
+  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'VertexShader'] =
+    shader.vertex;
+  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'FragmentShader'] =
+    shader.fragment;
 };
 
 const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
-  console.log(
-    `trying to update the custom shader parameters using the parameters for ${materialName}`
-  );
+  // console.log(
+  //   `trying to update the custom shader parameters using the parameters for ${materialName}`
+  // );
 
   registerMaterial(shaders[materialName], materialName);
 
-  // setTimeout(() => {
-    console.log(Effect.ShadersStore);
+  const localMaterial = updateMaterial(scene, materialName);
 
-    const localMaterial = updateMaterial(scene, materialName);
-
-    console.log(localMaterial);
-    scene.geometries.forEach((geo) => {
-      geo.meshes.forEach((mesh) => {
-        mesh.material = localMaterial;
-      });
+  scene.geometries.forEach((geo) => {
+    geo.meshes.forEach((mesh) => {
+      mesh.material = localMaterial;
     });
-  // }, 100);
+  });
 };
 
 const ShaderButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
@@ -125,9 +125,9 @@ export default ({
   ]);
 
   useEffect(() => {
-    console.log(
-      'material name has updated, trying to update all the geometries with it'
-    );
+    // console.log(
+    //   'material name has updated, trying to update all the geometries with it'
+    // );
     updateSceneGeometriesMaterial(scene, materialName);
   }, [materialName]);
 

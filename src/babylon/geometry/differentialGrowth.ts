@@ -1,9 +1,20 @@
-import { Vector2, Vector3 } from '@babylonjs/core';
+import { Scene, ShaderMaterial, StandardMaterial, Vector2, Vector3 } from '@babylonjs/core';
+import { LinkButtonComponent } from '@babylonjs/inspector/components/actionTabs/lines/linkButtonComponent';
+import { ParallelTransportMesh } from './parallelTransportFrames';
 
 type HashDict = { [cellID: string]: Vector2[] };
-type Interval = { min: number; max: number };
+type GrowthInput = {
+  vs: Vector2[],
+  repulsion?: number,
+  attraction?: number,
+  repulsionRadius?: number,
+  attractionRadius?: number,
+  jiggleRadius?: number,
+  smoothingValue?: number,
+  randomInsertionRate?: number
+}
 
-const ASCII_INTERVAL = { min: 32, max: 126 };
+const RANGE_OFFSET = 1000.;
 
 const distance = (v1: Vector2, v2: Vector2): number => {
   return v2.subtract(v1).length();
@@ -13,11 +24,24 @@ const midPoint = (v1: Vector2, v2: Vector2): Vector2 => {
   return v1.add(v2).scale(0.5);
 };
 
+const interpolations = (v1: Vector2, v2: Vector2, goalDistance: number): Vector2[] => {
+  const dir = v2.subtract(v1);
+  const distance = dir.length();
+  const numInterpolations = Math.floor(distance / goalDistance);
+  const step = dir.scale(1 / numInterpolations);
+  const pts = [];
+  for (let i = 1; i < numInterpolations; i++) {
+    pts.push(v1.add(step.scale(i)));
+  };
+
+  return pts;
+}
+
 const coordinateGrounding = (v: Vector2, gridFraction: number): string => {
   return (
-    (v.x * gridFraction).toPrecision(1) +
+    (RANGE_OFFSET + v.x * gridFraction).toPrecision(1) +
     '-' +
-    (v.y * gridFraction).toPrecision(1)
+    (RANGE_OFFSET + v.y * gridFraction).toPrecision(1)
   );
 };
 
@@ -74,38 +98,44 @@ export class Growth {
   jiggleRadius: number;
   smoothingValue: number;
   randomInsertionRate: number;
+
   reupulsionThreshold: number = 10;
+  hashDict: HashDict;
 
   iteration: number = 0;
-  distanceMap: Map<Vector2, Vector2[]> = new Map();
+  splitCount: number = 0;
+  insertionCount: number = 0;
 
-  constructor(
-    vs: Vector2[],
-    repulsion: number,
-    attraction: number,
-    repulsionRadius: number,
-    attractionRadius: number,
-    jiggleRadius: number,
-    smoothingValue: number,
-    randomInsertionRate: number
-  ) {
+  static DEFAULT: GrowthInput = {
+    vs: [],
+    repulsion: .015,
+    attraction: .025,
+    repulsionRadius: 1.25,
+    attractionRadius: 2.5,
+    jiggleRadius: .05,
+    smoothingValue: .5,
+    randomInsertionRate: 0.01
+  }
+
+  constructor(input: GrowthInput) {
+    const { vs, repulsion, attraction, repulsionRadius, attractionRadius, jiggleRadius, smoothingValue, randomInsertionRate } = input;
+
     this.vs = vs;
-    this.repulsionStrength = repulsion;
-    this.attractionStrength = attraction;
-    this.repulsionRadius = repulsionRadius;
-    this.attractionRadius = attractionRadius;
-    this.splitDistance = attractionRadius * 2;
-    this.jiggleRadius = jiggleRadius;
-    this.smoothingValue = smoothingValue;
-    this.randomInsertionRate = randomInsertionRate;
+    this.repulsionStrength = repulsion ?? Growth.DEFAULT.repulsion;
+    this.attractionStrength = attraction ?? Growth.DEFAULT.attraction;
+    this.repulsionRadius = repulsionRadius ?? Growth.DEFAULT.repulsionRadius;
+    this.attractionRadius = attractionRadius ?? Growth.DEFAULT.attractionRadius;
+    this.splitDistance = attractionRadius * 2 ?? Growth.DEFAULT.attractionRadius * 2;
+    this.jiggleRadius = jiggleRadius ?? Growth.DEFAULT.jiggleRadius;
+    this.smoothingValue = smoothingValue ?? Growth.DEFAULT.smoothingValue;
+    this.randomInsertionRate = randomInsertionRate ?? Growth.DEFAULT.randomInsertionRate;
   }
 
   public jiggle = () => {
-    this.vs = this.vs.map((v) => {
+    this.vs.forEach((v) => {
       const alpha = Math.random() * Math.PI * 2;
       const r = Math.random() * this.jiggleRadius;
-
-      return v.add(new Vector2(r * Math.cos(alpha), r * Math.sin(alpha)));
+      v.addInPlace(new Vector2(r * Math.cos(alpha), r * Math.sin(alpha)));
     });
   };
 
@@ -114,11 +144,11 @@ export class Growth {
     this.vs.forEach((v, i) => {
       newVs.push(v);
       if (
-        Math.random() > this.randomInsertionRate &&
-        this.distanceMap.get(v).length < this.reupulsionThreshold
+        Math.random() < this.randomInsertionRate && getNeighbours(this.hashDict, v, this.repulsionRadius)
       ) {
         const n = this.vs[(i + 1) % this.vs.length];
-        newVs.push(v.add(n).scale(0.5));
+        newVs.push(midPoint(v, n));
+        this.insertionCount++;
       }
     });
     this.vs = newVs;
@@ -130,10 +160,10 @@ export class Growth {
 
   public smoothing = () => {
     this.vs = this.vs.map((v, i) => {
-      const p = this.vs[(i - 1) % this.vs.length];
+      const p = this.vs[(i  + this.vs.length - 1) % this.vs.length];
       const n = this.vs[(i + 1) % this.vs.length];
 
-      const vm = v.add(p).scale(0.5).subtract(v);
+      const vm = midPoint(n, p).subtract(v);
       return v.add(vm.scale(this.smoothingValue));
     });
   };
@@ -144,26 +174,29 @@ export class Growth {
       const n = this.vs[(i + 1) % this.vs.length];
 
       newVs.push(v);
-      if (distance(v, n) > this.splitDistance) newVs.push(midPoint(v, n));
+      if (distance(v, n) > this.splitDistance) {
+        newVs.push(...interpolations(v, n, this.attractionRadius));
+        this.splitCount++;
+      }
     });
     this.vs = newVs;
   };
 
   public repulsion = (boundary: Vector2[]) => {
-    const vectorMap = hashDistance(this.vs, this.repulsionRadius);
     const repVPairs: [Vector2, Vector2][] = [];
 
-    Object.values(vectorMap).forEach((vectors) => {
-      const oVs = getNeighbours(vectorMap, vectors[0], this.repulsionRadius);
+    Object.values(this.hashDict).forEach((vectors) => {
+      const oVs = getNeighbours(this.hashDict, vectors[0], this.repulsionRadius);
 
       vectors.forEach((v) => {
         const mV = new Vector2(0, 0);
         oVs.forEach((oV) => {
-          const d = v.subtract(oV).length();
+          const oMv = v.subtract(oV);
+          const d = oMv.length();
           if (d < this.repulsionRadius && oV !== v) {
             const sc =
               this.repulsionStrength * (1 - d / this.repulsionRadius) ** 2;
-            const locMv = oV.subtract(v).scale(sc);
+            const locMv = oMv.normalize().scale(sc);
             mV.addInPlace(locMv);
           }
         });
@@ -178,7 +211,7 @@ export class Growth {
 
   public attraction = () => {
     return this.vs.map((v, i) => {
-      const p = this.vs[(i - 1) % this.vs.length];
+      const p = this.vs[(i + this.vs.length - 1) % this.vs.length];
       const n = this.vs[(i + 1) % this.vs.length];
 
       const localAR = this.attractionRadius * this.distanceFunction(v);
@@ -193,6 +226,8 @@ export class Growth {
   };
 
   public grow = (boundary: Vector2[]) => {
+    this.hashDict = hashDistance(this.vs, this.repulsionRadius);
+
     this.split();
     this.attraction();
     this.repulsion(boundary);
@@ -204,10 +239,21 @@ export class Growth {
   };
 
   public asPolygon = (h: number = 0) => {
-    this.vs.map((v) => new Vector3(v.x, v.y, h));
+    return this.vs.map((v) => new Vector3(v.x, v.y, h));
   };
 
+  public asPipe = (h: number = 0, radius: number = 1.5, material: ShaderMaterial, scene: Scene, vCount: number = 15, uCount: number = 2.5) => {
+    const parallelTransportMesh = new ParallelTransportMesh(
+      this.asPolygon(h),
+      radius,
+      vCount,
+      new StandardMaterial('standardMaterial', scene),
+      uCount,
+      scene
+    );
+  }
+
   public toString = () => {
-    return `GrowingCurve with ${this.vs.length} Vertexes, grown ${this.iteration} times`;
+    return `GrowingCurve with ${this.vs.length} Vertexes, grown ${this.iteration} times, split ${this.splitCount} times, inserted ${this.insertionCount} times`;
   };
 }

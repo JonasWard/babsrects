@@ -3,6 +3,7 @@ import {
   Mesh,
   Scene,
   ShaderMaterial,
+  StandardMaterial,
   Vector2,
   Vector3,
   VertexData,
@@ -13,7 +14,7 @@ export class ParallelTransportMesh extends Mesh {
     curvePoints: Vector3[],
     radius = 1.5,
     divisions: number,
-    material: ShaderMaterial | undefined,
+    material: ShaderMaterial | undefined | StandardMaterial, 
     uvScale: number,
     scene: Scene
   ) {
@@ -169,8 +170,6 @@ export class ParallelTransportMesh extends Mesh {
     uvScale = 2
   ) {
     const frames = this._constructFrames(curvePoints);
-
-    // console.log(frames.map(f => f.length))
 
     const ns = [];
     const bns = [];

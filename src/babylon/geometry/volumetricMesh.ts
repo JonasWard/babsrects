@@ -353,6 +353,10 @@ export class VolumetricCell {
     return Array.from(vertices);
   }
 
+  public toVolumetricMesh = (layerSize: number[] = [1.]): VolumetricMesh => {
+    return new VolumetricMesh([]);
+  }
+
   public babylonMesh = (scene: Scene) => {
     const vertexIdMap: {[key: string]: number} = {};
     const vertexGeometryArray: number[] = [];
