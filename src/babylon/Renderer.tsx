@@ -9,14 +9,14 @@ import SceneComponent from './scene';
 export const CUSTOM_SHADER_NAME = 'customShaderName';
 const growth = new Growth({
   vs: createCircle(new Vector3(0, 0, 0), 5, 10).map(
-    (v) => new Vector2(v.x, v.y)
+    (v) => new Vector2(v.x, v.z)
   ),
 });
 
 let material: ShaderMaterial;
 let time = 0;
 let iteration = 0;
-let height = 0;
+let h = 0;
 
 export const updateMaterial = (scene: Scene, materialName = 'a') => {
   material = createCustomShader(scene, materialName) as ShaderMaterial;
@@ -31,17 +31,25 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   addCurve(scene, canvas, material);
 
   scene.registerBeforeRender(() => {
-    if (growth.vs.length <= 4000) {
+    const vertexLimit = 40000;
+
+    if (growth.vs.length <= vertexLimit && iteration <= 2000) {
       iteration++;
       growth.grow([]);
 
-      if (growth.vs.length > 4000) growth.asPipe(0., 0.25, material, scene, 6, 1);
+      if (iteration % 10 === 0) {
+        console.log(growth.toString());
+        h += .35;
+        // scene.meshes.forEach(mesh => mesh.dispose());
+        growth.asPipe(h, 0.2, material, scene, 6, 1);
+      }
 
-      // if (iteration % 400 === 339) {
-      //   height++;
-        
-      //   console.log(growth.toString());
-      // }
+      if (growth.vs.length >= vertexLimit || iteration > 2000) {
+        console.log(growth.toString());
+        // scene.meshes.forEach(mesh => mesh.dispose());
+        growth.asPipe(h, 0.2, material, scene, 6, 1);
+        console.log(growth.hashDict);
+      }
     }
   });
 };
