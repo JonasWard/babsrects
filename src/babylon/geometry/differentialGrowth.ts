@@ -22,6 +22,14 @@ type GrowthInput = {
 
 const RANGE_OFFSET = 1000;
 
+const sdGyroid = (v: Vector3, scale: number): number => {
+  v = v.scale(scale);
+  const vS = new Vector3(Math.sin(v.x) + Math.sin(v.y) + Math.sin(v.z));
+  const vC = new Vector3(Math.cos(v.x) + Math.cos(v.y) + Math.cos(v.z));
+
+  return Vector3.Dot(vS, vC);
+}
+
 const distance = (v1: Vector2, v2: Vector2): number => {
   return v2.subtract(v1).length();
 };
@@ -110,9 +118,11 @@ export class Growth {
   randomInsertionRate: number;
 
   static repulsionMaximumThreshold: number = 45;
-  static repulsionMinimumThreshold: number = 25;
+  static repulsionMinimumThreshold: number = 20;
 
   hashDict: HashDict;
+  hashDictBoundary: HashDict;
+  h: number = 0;
 
   iteration: number = 0;
   splitCount: number = 0;
@@ -176,13 +186,19 @@ export class Growth {
         this.repulsionRadius
       ).length;
 
+      const boundaryCount = getNeighbours(
+        this.hashDictBoundary,
+        v,
+        this.repulsionRadius
+      ).length;
+
       const neighbourCountAllows =
-        neighbourhoudCount < Growth.repulsionMaximumThreshold;
+        neighbourhoudCount + boundaryCount < Growth.repulsionMaximumThreshold;
       const neigbourCountForces =
-        neighbourhoudCount < Growth.repulsionMinimumThreshold;
+        neighbourhoudCount + boundaryCount < Growth.repulsionMinimumThreshold * this.distanceFunction(v);
 
       const shouldInsert = Math.random() < this.randomInsertionRate;
-      if (neigbourCountForces || (shouldInsert && neighbourCountAllows)) {
+      if (neighbourCountAllows && (neigbourCountForces || shouldInsert)) {
         const n = this.vs[(i + 1) % this.vs.length];
         newVs.push(midPoint(v, n));
         this.insertionCount++;
@@ -194,8 +210,8 @@ export class Growth {
     // console.log(`amount of times notInsert:   ${notInsert}`);
   };
 
-  public distanceFunction = (v: Vector2, z?: number): number => {
-    return 1;
+  public distanceFunction = (v: Vector2): number => {
+    return Math.min(0, 1. + .5 * sdGyroid(new Vector3(v.x, v.y, this.h), sdGyroid(new Vector3(v.x, v.y, this.h), .01)));
   };
 
   public smoothing = () => {
@@ -222,12 +238,18 @@ export class Growth {
     this.vs = newVs;
   };
 
-  public repulsion = (boundary: Vector2[]) => {
+  public repulsion = () => {
     const repVPairs: [Vector2, Vector2][] = [];
 
     Object.values(this.hashDict).forEach((vectors) => {
       const oVs = getNeighbours(
         this.hashDict,
+        vectors[0],
+        this.repulsionRadius
+      );
+
+      const boundaryoVs = getNeighbours(
+        this.hashDictBoundary,
         vectors[0],
         this.repulsionRadius
       );
@@ -244,6 +266,18 @@ export class Growth {
             mV.addInPlace(locMv);
           }
         });
+
+        boundaryoVs.forEach((oV) => {
+          const oMv = v.subtract(oV);
+          const d = oMv.length();
+          if (d < this.repulsionRadius && oV !== v) {
+            const sc =
+              this.repulsionStrength * 10. * (1 - d / this.repulsionRadius) ** 2;
+            const locMv = oMv.normalize().scale(sc);
+            mV.addInPlace(locMv);
+          }
+        });
+
         repVPairs.push([v, mV]);
       });
     });
@@ -269,14 +303,16 @@ export class Growth {
     });
   };
 
-  public grow = (boundary: Vector2[]) => {
+  public grow = (boundary: Vector2[], h?: number) => {
     this.hashDict = hashDistance(this.vs, this.repulsionRadius);
+    this.hashDictBoundary = hashDistance(boundary, this.repulsionRadius);
+    if (h) this.h = h;
 
     this.split();
     this.attraction();
-    this.repulsion(boundary);
+    this.repulsion();
     this.randomInsert();
-    this.jiggle();
+    // this.jiggle();
     this.smoothing();
 
     this.iteration += 1;

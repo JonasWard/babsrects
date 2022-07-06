@@ -60,7 +60,6 @@ export const addCurve = (
   //   );
   // }
 
-  const pts = createCircle(new Vector3(0, 0, 0), 15., 40).map(v => new Vector2(v.x, v.z));
   // const pts = [
   //   new Vector2(5, 5),
   //   new Vector2(10, 12),
