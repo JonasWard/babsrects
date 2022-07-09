@@ -211,7 +211,8 @@ export class Growth {
   };
 
   public distanceFunction = (v: Vector2): number => {
-    return Math.min(0, 1. + .5 * sdGyroid(new Vector3(v.x, v.y, this.h), sdGyroid(new Vector3(v.x, v.y, this.h), .01)));
+    return 1.;
+    // return Math.min(0, 1. + .5 * sdGyroid(new Vector3(v.x, v.y, this.h), sdGyroid(new Vector3(v.x, v.y, this.h), .01)));
   };
 
   public smoothing = () => {
