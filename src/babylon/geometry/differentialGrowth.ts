@@ -5,7 +5,6 @@ import {
   Vector2,
   Vector3,
 } from '@babylonjs/core';
-import { LinkButtonComponent } from '@babylonjs/inspector/components/actionTabs/lines/linkButtonComponent';
 import { ParallelTransportMesh } from './parallelTransportFrames';
 
 type HashDict = { [cellID: string]: Vector2[] };
