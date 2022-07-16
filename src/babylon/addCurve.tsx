@@ -76,13 +76,13 @@ export const addCurve = (
 
   const volumetricCell = VolumetricCell.simplePlanarCell(10, 10, 1);
 
-  volumetricCell.extrudeUpwards();
+  const allCells = volumetricCell.extrudeUpwards([], 1, true, true);
   // volumetricCell.extrudeUpwards([12, 33, 77]);
   // console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
   // console.log(volumetricMesh.getPolygons());
   // console.log(volumetricMesh.getDualGraphAsLines());
-
-  volumetricCell.babylonMesh(scene);
+  allCells.forEach(c => c.babylonMesh(scene))
+  // volumetricCell.babylonMesh(scene);
 
   // console.log(`vertexCount: ${vCount * rowCount * uCount}`);
 
