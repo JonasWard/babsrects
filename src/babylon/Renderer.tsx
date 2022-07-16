@@ -30,58 +30,60 @@ export const updateMaterial = (scene: Scene, materialName = 'a') => {
 const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   material = updateMaterial(scene);
 
-  console.log(material);
+  console.log('before adding curve')
 
   addCurve(scene, canvas, material);
 
-  scene.registerBeforeRender(() => {
-    const vertexLimit = 40000;
+  console.log('added curve');
 
-    if (growth.vs.length <= vertexLimit && iteration <= 3000) {
-      iteration++;
+  // scene.registerBeforeRender(() => {
+  //   const vertexLimit = 40000;
 
-      const locR =  r - 2. + Math.sin(iteration * .005)*2.;
+  //   if (growth.vs.length <= vertexLimit && iteration <= 3000) {
+  //     iteration++;
 
-      const locROuter =  r + 4. + Math.sin(iteration * .005)*2.;
+  //     const locR =  r - 2. + Math.sin(iteration * .005)*2.;
 
-      const boundary = createCircle(new Vector3(0, 0, 0), locR, divCalc(locR)).map(v => new Vector2(v.x, v.z));
-      const boundaryOuter = createCircle(new Vector3(0, 0, 0), locROuter, divCalc(locR)).map(v => new Vector2(v.x, v.z));
+  //     const locROuter =  r + 4. + Math.sin(iteration * .005)*2.;
 
-      growth.grow([...boundary, ...boundaryOuter], h);
+  //     const boundary = createCircle(new Vector3(0, 0, 0), locR, divCalc(locR)).map(v => new Vector2(v.x, v.z));
+  //     const boundaryOuter = createCircle(new Vector3(0, 0, 0), locROuter, divCalc(locR)).map(v => new Vector2(v.x, v.z));
 
-      if (iteration % 10 === 0) {
-        console.log(growth.toString());
-        h += .35;
-        // scene.meshes.forEach(mesh => mesh.dispose());
-        growth.asPipe(h, 0.2, material, scene, 6, 1);
+  //     growth.grow([...boundary, ...boundaryOuter], h);
 
-        // new ParallelTransportMesh(
-        //   boundary.map(v => new Vector3(v.x, v.y, h)),
-        //   .2,
-        //   5,
-        //   new StandardMaterial('standardMaterial', scene),
-        //   10,
-        //   scene
-        // );
+  //     if (iteration % 10 === 0) {
+  //       console.log(growth.toString());
+  //       h += .35;
+  //       // scene.meshes.forEach(mesh => mesh.dispose());
+  //       growth.asPipe(h, 0.2, material, scene, 6, 1);
 
-        // new ParallelTransportMesh(
-        //   boundaryOuter.map(v => new Vector3(v.x, v.y, h)),
-        //   .2,
-        //   5,
-        //   new StandardMaterial('standardMaterial', scene),
-        //   10,
-        //   scene
-        // );
-      }
+  //       // new ParallelTransportMesh(
+  //       //   boundary.map(v => new Vector3(v.x, v.y, h)),
+  //       //   .2,
+  //       //   5,
+  //       //   new StandardMaterial('standardMaterial', scene),
+  //       //   10,
+  //       //   scene
+  //       // );
 
-      if (growth.vs.length >= vertexLimit || iteration > 3000) {
-        console.log(growth.toString());
-        // scene.meshes.forEach(mesh => mesh.dispose());
-        growth.asPipe(h, 0.2, material, scene, 6, 1);
-        console.log(growth.hashDict);
-      }
-    }
-  });
+  //       // new ParallelTransportMesh(
+  //       //   boundaryOuter.map(v => new Vector3(v.x, v.y, h)),
+  //       //   .2,
+  //       //   5,
+  //       //   new StandardMaterial('standardMaterial', scene),
+  //       //   10,
+  //       //   scene
+  //       // );
+  //     }
+
+  //     if (growth.vs.length >= vertexLimit || iteration > 3000) {
+  //       console.log(growth.toString());
+  //       // scene.meshes.forEach(mesh => mesh.dispose());
+  //       growth.asPipe(h, 0.2, material, scene, 6, 1);
+  //       console.log(growth.hashDict);
+  //     }
+  //   }
+  // });
 };
 
 const onRender = (scene: Scene) => {

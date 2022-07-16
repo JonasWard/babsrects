@@ -6,7 +6,7 @@ import {
   VertexData,
 } from '@babylonjs/core';
 import { v4 } from 'uuid';
-import { findAllChainsOfDualDegreeNodes, halfEdgesToGraph, hEdgesToGraph, isSingleChain } from './graphs';
+import { findAllChainsOfDualDegreeNodes, hEdgesToGraph } from './graphs';
 
 type IVector = { x: number; y: number; z: number };
 
@@ -17,12 +17,15 @@ export class VolumetricVertex {
   halfEdges: Set<HalfEdge>;
   id: string;
   private offspring?: VolumetricVertex;
+  private linkedFaces: Set<VolumetricFace>;
 
   constructor(position: Vector3, halfEdges?: HalfEdge[]) {
     this.position = position;
     this.halfEdges = new Set<HalfEdge>();
 
     if (halfEdges) halfEdges.forEach((he) => this.halfEdges.add(he));
+
+    this.linkedFaces = new Set();
 
     this.id = v4();
   }
@@ -44,21 +47,29 @@ export class VolumetricVertex {
   public getFaces = (): VolumetricFace[] =>
     this.getHalfEdges().map((he) => he.face);
 
-  public getNormal = (): Vector3 =>
-    this.getFaces()
-      .reduce((acc, f) => acc.add(f.getNormal()), new Vector3(0, 0, 0))
-      .scale(1 / this.halfEdges.size);
+  public getNormal = (): Vector3 => {
+    const normal = new Vector3(0, 0, 0);
+    Array.from(this.linkedFaces.values()).forEach((f) =>
+      normal.addInPlace(f.getNormal())
+    );
+
+    return normal.normalize();
+  };
 
   public setOffspring(value: number) {
     this.offspring = new VolumetricVertex(
-      this.position.add(this.getNormal().scaleInPlace(value))
+      this.position.add(this.getNormal().scale(value))
     );
   }
 
   public getOffspring(value?: number): VolumetricVertex {
-    if (!this.offspring) this.setOffspring(1);
+    if (!this.offspring) this.setOffspring(value);
     return this.offspring;
   }
+
+  public clearLinkedFaces = () =>
+    (this.linkedFaces = new Set<VolumetricFace>());
+  public addLinkedFace = (face: VolumetricFace) => this.linkedFaces.add(face);
 }
 
 export class HalfEdge {
@@ -101,7 +112,7 @@ export class HalfEdge {
     const opposite = new HalfEdge(this.getVertexPrevious());
     this.setPair(opposite);
     return opposite;
-  }
+  };
 
   public setNext = (next: HalfEdge) => {
     this.next = next;
@@ -143,20 +154,29 @@ export class HalfEdge {
     return this.faceOffspring;
   };
 
-  public static constructClosingFaceFromEdges = (hEdges: HalfEdge[]) => {
+  public static constructClosingFaceFromEdges = (
+    hEdges: HalfEdge[],
+    face?: VolumetricFace
+  ) => {
+    // assumes that the given edges form a ring
+
     // check whether the chains are closed & order them
-    const {edgeMap, undirectedEdgesMap} = hEdgesToGraph(hEdges);
+    const { vertexMap, undirectedEdgesMap } = hEdgesToGraph(hEdges);
     const chains = findAllChainsOfDualDegreeNodes(undirectedEdgesMap);
 
-    if (!isSingleChain(chains, hEdges.length)) return;
+    const newFaceEdges = hEdges.map((e) => e.constructPair());
 
-    const {edges} = chains[0];
-    const sortedEdges = edges.map(e => edgeMap[e]);
-    // loop through the edges and create the pairs
+    // assigning the vertices to one another
+    // newFaceEdges.reverse();
+    newFaceEdges.forEach((he, i) =>
+      he.setNext(newFaceEdges[(i + 1) % newFaceEdges.length])
+    );
 
-    sortedEdges.map()
+    const newFace = face ?? new VolumetricFace([]);
+    newFace.setEdges(newFaceEdges);
 
-  }
+    return face;
+  };
 }
 
 class VolumetricFace {
@@ -233,7 +253,7 @@ class VolumetricFace {
 
   public getNormal = (): Vector3 | undefined => {
     if (this.edges.length < 3) return;
-    if (!this.isClosed()) return;
+    // if (!this.isClosed()) return;
 
     const edge0dir = this.edges[0].getDirectionVector();
     if (!edge0dir) return;
@@ -252,12 +272,20 @@ class VolumetricFace {
     } else return [];
   };
 
-  public extrudeFace = (height: number = 1) => {
+  public extrudeFace = (height: number = 10) => {
+
     if (this.neighbour) return;
     this.vertexPolygon().forEach((v) => v.getOffspring(height));
-    const newFaces = this.edges.map((edge) => edge.getFaceOffspring());
-    newFaces.forEach((f, i) => f.edges[1].setPair(newFaces[(i + 1) % newFaces.length].edges[3]));
 
+    const newFaces = this.edges.map((edge) => edge.getFaceOffspring());
+    newFaces.forEach((f, i) =>
+      f.edges[1].setPair(newFaces[(i + 1) % newFaces.length].edges[3])
+    );
+
+    const topEdges = newFaces.map((f) => f.edges[2]);
+    newFaces.push(HalfEdge.constructClosingFaceFromEdges(topEdges, this));
+
+    return newFaces;
   };
 
   /**
@@ -433,6 +461,28 @@ export class VolumetricCell {
     );
 
     return Array.from(vertices);
+  };
+
+  private applyNormalCalculation = () => {
+    this.getAllVertices().forEach((v) => v.clearLinkedFaces());
+    console.log(this.faces.map((f) => f.vertexPolygon()));
+    this.faces.forEach((f) =>
+      f.vertexPolygon().forEach((v) => v.addLinkedFace(f))
+    );
+  };
+
+  public extrudeUpwards = (faceIndices?: number[], offspringHeight: number = 1) => {
+    this.applyNormalCalculation();
+
+    if (faceIndices && faceIndices.length > 0) {
+      faceIndices.sort().reverse();
+
+    faceIndices.forEach((i) => {
+      this.faces.splice(i, 1, ...this.faces[i].extrudeFace(offspringHeight));
+    });
+    } else {
+      this.faces = this.faces.map(f => f.extrudeFace(offspringHeight)).flat();
+    }
   };
 
   public toVolumetricMesh = (layerSize: number[] = [1]): VolumetricMesh => {

@@ -8,6 +8,10 @@ type HalfEdgeMap = {[edgeId: string] : HalfEdge};
 type VertexMap = {[vertexId: string]: VolumetricVertex};
 type EdgeMap = {[edgeId: string] : Edge};
 
+export const isSingleChain = (chains: EdgeChain[], items?: number) => {
+    return chains.length === 1 && (items ? chains[0].edges.length === items : true);
+}
+
 // interface for graph objects
 const cellToGraph = (cell: VolumetricCell) => {
     const halfEdgeMap: HalfEdgeMap = {};

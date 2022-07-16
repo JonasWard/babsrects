@@ -74,12 +74,15 @@ export const addCurve = (
 
   // growth.asPipe(0., .05, material, scene, 8);
 
-  const volumetricMesh = VolumetricCell.simplePlanarCell(10, 10, 1);
+  const volumetricCell = VolumetricCell.simplePlanarCell(10, 10, 1);
+
+  volumetricCell.extrudeUpwards();
+  // volumetricCell.extrudeUpwards([12, 33, 77]);
   // console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
   // console.log(volumetricMesh.getPolygons());
   // console.log(volumetricMesh.getDualGraphAsLines());
 
-  volumetricMesh.babylonMesh(scene);
+  volumetricCell.babylonMesh(scene);
 
   // console.log(`vertexCount: ${vCount * rowCount * uCount}`);
 
