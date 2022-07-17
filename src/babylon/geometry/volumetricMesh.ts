@@ -1,16 +1,36 @@
-import {
-  Mesh,
-  Scene,
-  Vector3,
-  VertexBuffer,
-  VertexData,
-} from '@babylonjs/core';
+import { Mesh, Scene, Vector3, VertexData } from '@babylonjs/core';
 import { v4 } from 'uuid';
 import { findAllChainsOfDualDegreeNodes, hEdgesToGraph } from './graphs';
+import { ParallelTransportMesh } from './parallelTransportFrames';
 
 type IVector = { x: number; y: number; z: number };
 
 const toIVector = (v: Vector3): IVector => ({ x: v.x, y: v.y, z: v.z });
+const catmullPolygon = (vs: Vector3[]) => {
+  const midPoints = vs.map((v, i) => v.add(vs[(i + 1) % vs.length]).scale(0.5));
+  const result = [];
+  midPoints.forEach((m, i) => {
+    result.push(
+      m
+        .add(midPoints[(i + midPoints.length - 1) % midPoints.length])
+        .scale(0.5)
+        .add(vs[i])
+        .scale(0.5)
+    );
+    result.push(m);
+  });
+
+  return result;
+};
+
+const catmullPolygonN = (vs: Vector3[], n: number) => {
+  n = n > 10 ? 10 : n;
+  for (let i = 0; i < n; i++) {
+    vs = catmullPolygon(vs);
+  }
+
+  return vs;
+};
 
 export class VolumetricVertex {
   position: Vector3;
@@ -62,6 +82,8 @@ export class VolumetricVertex {
     );
   }
 
+  public clearOffspring = () => (this.offspring = undefined);
+
   public getOffspring(value?: number): VolumetricVertex {
     if (!this.offspring) this.setOffspring(value);
     return this.offspring;
@@ -84,7 +106,7 @@ export class HalfEdge {
   constructor(vertex: VolumetricVertex, next?: HalfEdge, opposite?: HalfEdge) {
     this.vertex = vertex;
     if (next) this.setNext(next);
-    this.opposite = opposite;
+    if (opposite) this.opposite = opposite;
 
     this.id = v4();
   }
@@ -137,6 +159,16 @@ export class HalfEdge {
     else console.warn('HalfEdge.asLine: no previous set');
   };
 
+  public getA = () =>
+    this.vertex.position.add(
+      this.next.vertex.position.subtract(this.vertex.position).scale(0.25)
+    );
+
+  public getB = () =>
+    this.vertex.position.add(
+      this.next.vertex.position.subtract(this.vertex.position).scale(0.75)
+    );
+
   /**
    * Method that returns a quad face extruded, using the offsprings of VolumetrixVertexes of the start and end point of the edge
    * should only be used when actually extruding all the edges of a face
@@ -148,11 +180,14 @@ export class HalfEdge {
       const previous = this.previous.vertex;
       const previousTop = this.previous.vertex.getOffspring();
 
-      const previousE = new HalfEdge(previous, this);
-      const topE = new HalfEdge(previousTop, previousE);
-      const nextE = new HalfEdge(nextTop, topE);
+      const previousE = new HalfEdge(previous);
+      const topE = new HalfEdge(previousTop);
+      const nextE = new HalfEdge(nextTop);
 
-      this.faceOffspring = new VolumetricFace([this, nextE, topE, previousE]);
+      const edges = [this, nextE, topE, previousE];
+      HalfEdge.linkChain(edges);
+
+      this.faceOffspring = new VolumetricFace(edges);
     }
 
     return this.faceOffspring;
@@ -172,15 +207,16 @@ export class HalfEdge {
 
     // assigning the vertices to one another
     // newFaceEdges.reverse();
-    newFaceEdges.forEach((he, i) =>
-      he.setNext(newFaceEdges[(i + 1) % newFaceEdges.length])
-    );
-
+    HalfEdge.linkChain(newFaceEdges);
+    
     const newFace = face ?? new VolumetricFace([]);
     newFace.setEdges(newFaceEdges);
 
     return newFace;
   };
+
+  public static linkChain = (hEdges: HalfEdge[]) =>
+    hEdges.forEach((he, i) => he.setNext(hEdges[(i + 1) % hEdges.length]));
 }
 
 class VolumetricFace {
@@ -251,7 +287,10 @@ class VolumetricFace {
   private idPolygon = (): string[] => this.vertexPolygon().map((v) => v.id);
 
   public getPolygon = (): IVector[] =>
-    this.vertexPolygon().map((v) => v.asIVector());
+    catmullPolygonN(
+      this.edges.map((he) => [he.getA(), he.getB()]).flat(),
+      3
+    ).map(toIVector);
 
   public getCenter = (): Vector3 => {
     let center = new Vector3(0, 0, 0);
@@ -295,15 +334,15 @@ class VolumetricFace {
     );
 
     if (splitOffCell) {
-      console.log('splitting of one cell');
+      const bottomEdges = newFaces.map((f) => f.edges[1]);
+
       newFaces.push(
-        HalfEdge.constructClosingFaceFromEdges(newFaces.map((f) => f.edges[2]))
+        HalfEdge.constructClosingFaceFromEdges(newFaces.map((f) => f.edges[3]))
       );
       newFaces.push(
-        HalfEdge.constructClosingFaceFromEdges(
-          newFaces.map((f) => f.edges[0]).reverse()
-        )
+        HalfEdge.constructClosingFaceFromEdges(bottomEdges.reverse())
       );
+
       if (linkFace) newFaces[newFaces.length - 1].setNeigbour(this);
     } else {
       newFaces.push(
@@ -444,12 +483,13 @@ export class VolumetricCell {
         const v10 = baseGridVertices[i + 1][j];
 
         const edge3 = new HalfEdge(v10); // left 3
-        const edge2 = new HalfEdge(v11, edge3); // top 2
-        const edge1 = new HalfEdge(v01, edge2); // right 1
-        const edge0 = new HalfEdge(v00, edge1); // bottom 0
-        edge3.setNext(edge0);
+        const edge2 = new HalfEdge(v11); // top 2
+        const edge1 = new HalfEdge(v01); // right 1
+        const edge0 = new HalfEdge(v00); // bottom 0
+        const edgeChain = [edge0, edge1, edge2, edge3];
+        HalfEdge.linkChain(edgeChain);
 
-        const volumetricFace = new VolumetricFace([edge0, edge1, edge2, edge3]);
+        const volumetricFace = new VolumetricFace(edgeChain);
         faces.push(volumetricFace);
 
         yFaceRow.push(volumetricFace);
@@ -499,6 +539,9 @@ export class VolumetricCell {
     );
   };
 
+  private generateOffsprings = (h: number) =>
+    this.getAllVertices().forEach((v) => v.getOffspring(h));
+
   public extrudeUpwards = (
     faceIndices?: number[],
     offspringHeight: number = 1,
@@ -506,9 +549,9 @@ export class VolumetricCell {
     linkFaces: boolean = true
   ): VolumetricCell[] => {
     this.applyNormalCalculation();
+    this.generateOffsprings(offspringHeight);
 
-    const newCells: VolumetricCell[] = [];
-    // const newCells: VolumetricCell[] = [this];
+    const newCells: VolumetricCell[] = [this];
 
     if (faceIndices && faceIndices.length > 0) {
       faceIndices.sort().reverse();
@@ -523,7 +566,6 @@ export class VolumetricCell {
         else this.faces.splice(i, 1, ...newFaces);
       });
     } else {
-      console.log('starting extruding one');
       if (splitOffCell)
         this.faces.forEach((f) =>
           newCells.push(
@@ -571,7 +613,7 @@ export class VolumetricCell {
   };
 }
 
-class VolumetricMesh {
+export class VolumetricMesh {
   cells: VolumetricCell[];
   id: string;
 
@@ -581,10 +623,36 @@ class VolumetricMesh {
     this.id = v4();
   }
 
+  public getNakedEdges = () => this.cells.map((c) => c.getNakedEdges()).flat();
+
+  public getDualGraphAsLines = () =>
+    this.cells.map((c) => c.getDualGraphAsLines()).flat();
+
+  public getPolygons = () => this.cells.map((c) => c.getPolygons()).flat();
+
+  public edgeMeshes = (scene, material) =>
+    this.getPolygons().forEach(
+      (vs) =>
+        new ParallelTransportMesh(
+          [
+            ...vs.map((v) => new Vector3(v.x, v.y, v.z)),
+            new Vector3(vs[0].x, vs[0].y, vs[0].z),
+          ],
+          0.05,
+          20,
+          material,
+          2.5,
+          scene
+        )
+    );
+
   static voxel = (size: number) => {
     // create one face
     const simpleCell = VolumetricCell.simplePlanarCell(1, 1, size);
-    simpleCell.extrudeUpwards(undefined, size);
+    const voxelCell = simpleCell.extrudeUpwards([], size, true, false)[1];
+
+    voxelCell.getAllVertices().forEach((v) => v.clearOffspring());
+    return voxelCell;
   };
 
   static simpleBoxModel = (xCount = 4, yCount = 4, zCount = 4, sideL = 1) => {

@@ -11,7 +11,7 @@ import { createCircle } from './geometry/directedCurve';
 import { createCustomShader } from './geometry/dynamicShader';
 import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
 import { profile } from './geometry/rrreefsProfile';
-import { VolumetricCell } from './geometry/volumetricMesh';
+import { VolumetricCell, VolumetricMesh } from './geometry/volumetricMesh';
 
 export const addCurve = (
   scene: Scene,
@@ -75,13 +75,30 @@ export const addCurve = (
   // growth.asPipe(0., .05, material, scene, 8);
 
   const volumetricCell = VolumetricCell.simplePlanarCell(10, 10, 1);
+  const voxelCell = VolumetricMesh.voxel(1.);
 
-  const allCells = volumetricCell.extrudeUpwards([], 1, true, true);
-  // volumetricCell.extrudeUpwards([12, 33, 77]);
-  // console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
-  // console.log(volumetricMesh.getPolygons());
-  // console.log(volumetricMesh.getDualGraphAsLines());
-  allCells.forEach(c => c.babylonMesh(scene))
+  console.log(voxelCell.getNakedEdges());
+    console.log(voxelCell.getDualGraphAsLines());
+    console.log(voxelCell.getPolygons());
+
+  console.log(voxelCell);
+
+  const result = voxelCell.extrudeUpwards([], 1., true, true);
+  const voxelMeshOffspring = new VolumetricMesh(result)
+
+  console.log(voxelMeshOffspring);
+  console.log(voxelMeshOffspring.getNakedEdges());
+  console.log(voxelMeshOffspring.getDualGraphAsLines());
+  console.log(voxelMeshOffspring.getPolygons());
+
+  voxelMeshOffspring.edgeMeshes(scene, material);
+
+  // const allCells = volumetricCell.extrudeUpwards([], 1, true, true);
+  // // volumetricCell.extrudeUpwards([12, 33, 77]);
+  // // console.log(volumetricMesh.getNakedEdges().map((e) => e.asLine()));
+  // // console.log(volumetricMesh.getPolygons());
+  // // console.log(volumetricMesh.getDualGraphAsLines());
+  // allCells.forEach(c => c.babylonMesh(scene))
   // volumetricCell.babylonMesh(scene);
 
   // console.log(`vertexCount: ${vCount * rowCount * uCount}`);
