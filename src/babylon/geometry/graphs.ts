@@ -18,7 +18,7 @@ const cellToGraph = (cell: VolumetricCell) => {
     const vertexMap: VertexMap = {};
     const edgeMap: EdgeMap = {};
 
-    cell.faces.forEach((face, i) => halfEdgesToGraphBase(face.edges, face.name ?? `f${i}`, halfEdgeMap, vertexMap, edgeMap));
+    cell.faces.forEach((face, i) => halfEdgesToGraphBase(face.getEdges(), face.name ?? `f${i}`, halfEdgeMap, vertexMap, edgeMap));
     const undirectedEdgesMap = constructUndirectedGraphMap(edgeMap);
 
     return {halfEdgeMap, vertexMap, edgeMap, undirectedEdgesMap}

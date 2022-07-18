@@ -83,7 +83,9 @@ export const addCurve = (
 
   console.log(voxelCell);
 
-  const result = voxelCell.extrudeUpwards([], 1., true, true);
+  // new VolumetricMesh([voxelCell]).edgeMeshes(scene, material);
+
+  const result = voxelCell.extrudeUpwards([], -1., true, true);
   const voxelMeshOffspring = new VolumetricMesh(result)
 
   console.log(voxelMeshOffspring);
