@@ -75,7 +75,7 @@ export function createCurveSet(startPoint: Vector3, movementDirection: Vector3, 
     return curvePoints;
 }
 
-export function createCircle(center: Vector3 = new Vector3(0,0,0), radius: number = 5., divisions: number = 100) {
+export const createCircle = (center: Vector3 = new Vector3(0,0,0), radius: number = 5., divisions: number = 100): Vector3[] => {
     const curvePoints = [];
     const angleDelta = Math.PI * 2. / divisions;
     

@@ -131,12 +131,12 @@ export class Growth {
   static DEFAULT: GrowthInput = {
     vs: [],
     repulsion: 0.75,
-    attraction: 0.25,
-    repulsionRadius: 15.,
+    attraction: 0.55,
+    repulsionRadius: 20.,
     attractionRadius: 30.,
-    jiggleRadius: 0.00001,
-    smoothingValue: 0.5,
-    randomInsertionRate: 0.01,
+    jiggleRadius: 0.01,
+    smoothingValue: .75,
+    randomInsertionRate: 0.001,
   };
 
   constructor(input: GrowthInput) {

@@ -3,7 +3,7 @@ import { Effect, Engine, Scene, Vector3 } from '@babylonjs/core';
 import * as React from 'react';
 import { CUSTOM_SHADER_NAME, updateMaterial } from './Renderer';
 import shaders from './shaders/shaders';
-import { downloadGCode } from './production/gcodeParser';
+import { downloadGCode, testCircle } from './production/gcodeParser';
 
 const materialStates = Object.keys(shaders);
 
@@ -33,10 +33,19 @@ const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
   });
 };
 
+const TestCircleButton: React.FC = () => {
+  return (
+    <button style={{ position: 'absolute', right: 0, top: 0 }} onClick={() => testCircle(125, 6, 4.)}>
+      download GCode!
+    </button>
+  );
+  
+}
+
 const GCodeButton: React.FC<{positions}> = ({positions}) => {
   return (
     <button style={{ position: 'absolute', left: 0, top: 25 }} onClick={() => downloadGCode(positions)}>
-      clickme!
+      download GCode!
     </button>
   );
 };
@@ -44,7 +53,22 @@ const GCodeButton: React.FC<{positions}> = ({positions}) => {
 const ShaderButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
   return (
     <button style={{ position: 'absolute', left: 0, top: 0 }} onClick={onClick}>
-      clickme!
+      change shader!
+    </button>
+  );
+};
+
+const StopClick: React.FC<{ onClick?: (value: boolean) => void }> = ({ onClick }) => {
+  const [value, setValue] = React.useState(true);
+
+  const changeState = () => {
+    setValue(!value);
+    onClick(!value);
+  }
+
+  return (
+    <button style={{ position: 'absolute', left: 0, top: 50 }} onClick={changeState}>
+      start/stop growth!
     </button>
   );
 };
@@ -57,6 +81,7 @@ export default ({
   onRender,
   onSceneReady,
   positions,
+  setContinueGrowth,
   ...rest
 }) => {
   const reactCanvas = useRef(null);
@@ -152,6 +177,8 @@ export default ({
       <canvas ref={reactCanvas} {...rest} />
       <ShaderButton onClick={changeMaterialState} />
       <GCodeButton positions={localPositions}/>
+      <StopClick onClick={setContinueGrowth}/>
+      <TestCircleButton/>
     </>
   );
 };

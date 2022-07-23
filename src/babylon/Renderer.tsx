@@ -8,8 +8,13 @@ import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
 import SceneComponent from './scene';
 
 const r = 150.;
-const center = new Vector3(300, 300, 0);
+const layerHeight = 4.;
+const pipeRadius = layerHeight * .55;
+const center = new Vector3(0, 0, 0);
 const divCalc = (r: number) => Math.ceil(r * Math.PI * 2);
+let continueGrowth = true;
+
+const setContinueGrowth = (value: boolean) => continueGrowth = value;
 
 const startpPts = createCircle(center, r, divCalc(r)).map(v => new Vector2(v.x, v.z));
 
@@ -44,7 +49,7 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   scene.registerBeforeRender(() => {
     const vertexLimit = 10000;
 
-    if (growth.vs.length <= vertexLimit && iteration <= 3000) {
+    if (continueGrowth && growth.vs.length <= vertexLimit && iteration <= 3000) {
       iteration++;
 
       const locR =  r - 2. + Math.sin(iteration * .005)*2.;
@@ -56,12 +61,12 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
 
       growth.grow([...boundary, ...boundaryOuter], h);
 
-      if (iteration % 10 === 0) {
+      if (iteration % 10 === 0 && iteration > 30) {
         console.log(growth.toString());
-        h += .35;
+        h += layerHeight;
         // scene.meshes.forEach(mesh => mesh.dispose());
         positions.push(...growth.vs.map(v => new Vector3(v.x, v.y, h)));
-        growth.asPipe(h, 0.2, material, scene, 6, 1);
+        growth.asPipe(h, pipeRadius, material, scene, 6, 1);
 
         // new ParallelTransportMesh(
         //   boundary.map(v => new Vector3(v.x, v.y, h)),
@@ -85,7 +90,7 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
       if (growth.vs.length >= vertexLimit || iteration > 3000) {
         console.log(growth.toString());
         // scene.meshes.forEach(mesh => mesh.dispose());
-        growth.asPipe(h, 0.2, material, scene, 6, 1);
+        growth.asPipe(h, pipeRadius, material, scene, 6, 1);
         positions.push(...growth.vs.map(v => new Vector3(v.x, v.y, h)));
         console.log(growth.hashDict);
       }
@@ -118,6 +123,7 @@ const Renderer: React.FC = () => {
         adaptToDeviceRatio={undefined}
         sceneOptions={undefined}
         positions={positions}
+        setContinueGrowth={setContinueGrowth}
       />
     </div>
   );
