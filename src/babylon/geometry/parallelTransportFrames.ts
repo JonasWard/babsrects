@@ -1,5 +1,6 @@
 import {
   Buffer,
+  Material,
   Mesh,
   Scene,
   ShaderMaterial,
@@ -14,7 +15,7 @@ export class ParallelTransportMesh extends Mesh {
     curvePoints: Vector3[],
     radius = 1.5,
     divisions: number,
-    material: ShaderMaterial | undefined | StandardMaterial, 
+    material: ShaderMaterial | undefined | Material, 
     uvScale: number,
     scene: Scene
   ) {

@@ -74,26 +74,26 @@ export const addCurve = (
 
   // growth.asPipe(0., .05, material, scene, 8);
 
-  const volumetricCell = VolumetricCell.simplePlanarCell(10, 10, 1);
-  const voxelCell = VolumetricMesh.voxel(1.);
+  // const volumetricCell = VolumetricCell.simplePlanarCell(10, 10, 1);
+  // const voxelCell = VolumetricMesh.voxel(1.);
 
-  console.log(voxelCell.getNakedEdges());
-    console.log(voxelCell.getDualGraphAsLines());
-    console.log(voxelCell.getPolygons());
+  // console.log(voxelCell.getNakedEdges());
+  //   console.log(voxelCell.getDualGraphAsLines());
+  //   console.log(voxelCell.getPolygons());
 
-  console.log(voxelCell);
+  // console.log(voxelCell);
 
-  // new VolumetricMesh([voxelCell]).edgeMeshes(scene, material);
+  // // new VolumetricMesh([voxelCell]).edgeMeshes(scene, material);
 
-  const result = voxelCell.extrudeUpwards([], -1., true, true);
-  const voxelMeshOffspring = new VolumetricMesh(result)
+  // const result = voxelCell.extrudeUpwards([], -1., true, true);
+  // const voxelMeshOffspring = new VolumetricMesh(result)
 
-  console.log(voxelMeshOffspring);
-  console.log(voxelMeshOffspring.getNakedEdges());
-  console.log(voxelMeshOffspring.getDualGraphAsLines());
-  console.log(voxelMeshOffspring.getPolygons());
+  // console.log(voxelMeshOffspring);
+  // console.log(voxelMeshOffspring.getNakedEdges());
+  // console.log(voxelMeshOffspring.getDualGraphAsLines());
+  // console.log(voxelMeshOffspring.getPolygons());
 
-  voxelMeshOffspring.edgeMeshes(scene, material);
+  // voxelMeshOffspring.edgeMeshes(scene, material);
 
   // const allCells = volumetricCell.extrudeUpwards([], 1, true, true);
   // // volumetricCell.extrudeUpwards([12, 33, 77]);

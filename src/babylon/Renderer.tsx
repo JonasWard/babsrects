@@ -1,4 +1,4 @@
-import { Scene, ShaderMaterial, StandardMaterial, Vector2, Vector3 } from '@babylonjs/core';
+import { Scene, ShaderMaterial, StandardMaterial, Vector2, Vector3, HemisphericLight } from '@babylonjs/core';
 import * as React from 'react';
 import { addCurve } from './addCurve';
 import { Growth } from './geometry/differentialGrowth';
@@ -7,10 +7,11 @@ import { createCustomShader } from './geometry/dynamicShader';
 import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
 import SceneComponent from './scene';
 
-const r = 15.;
+const r = 150.;
+const center = new Vector3(300, 300, 0);
 const divCalc = (r: number) => Math.ceil(r * Math.PI * 2);
 
-const startpPts = createCircle(new Vector3(0, 0, 0), r, divCalc(r)).map(v => new Vector2(v.x, v.z));
+const startpPts = createCircle(center, r, divCalc(r)).map(v => new Vector2(v.x, v.z));
 
 export const CUSTOM_SHADER_NAME = 'customShaderName';
 const growth = new Growth({
@@ -21,6 +22,7 @@ let material: ShaderMaterial;
 let time = 0;
 let iteration = 0;
 let h = 0;
+let positions: Vector3[] = []
 
 export const updateMaterial = (scene: Scene, materialName = 'a') => {
   material = createCustomShader(scene, materialName) as ShaderMaterial;
@@ -28,6 +30,9 @@ export const updateMaterial = (scene: Scene, materialName = 'a') => {
 };
 
 const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
+  const light = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene);
+  light.intensity = 1.0;
+  
   material = updateMaterial(scene);
 
   console.log('before adding curve')
@@ -36,65 +41,67 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
 
   console.log('added curve');
 
-  // scene.registerBeforeRender(() => {
-  //   const vertexLimit = 40000;
+  scene.registerBeforeRender(() => {
+    const vertexLimit = 10000;
 
-  //   if (growth.vs.length <= vertexLimit && iteration <= 3000) {
-  //     iteration++;
+    if (growth.vs.length <= vertexLimit && iteration <= 3000) {
+      iteration++;
 
-  //     const locR =  r - 2. + Math.sin(iteration * .005)*2.;
+      const locR =  r - 2. + Math.sin(iteration * .005)*2.;
 
-  //     const locROuter =  r + 4. + Math.sin(iteration * .005)*2.;
+      const locROuter =  r + 4. + Math.sin(iteration * .005)*2.;
 
-  //     const boundary = createCircle(new Vector3(0, 0, 0), locR, divCalc(locR)).map(v => new Vector2(v.x, v.z));
-  //     const boundaryOuter = createCircle(new Vector3(0, 0, 0), locROuter, divCalc(locR)).map(v => new Vector2(v.x, v.z));
+      const boundary = createCircle(center, locR, divCalc(locR)).map(v => new Vector2(v.x, v.z));
+      const boundaryOuter = createCircle(center, locROuter, divCalc(locR)).map(v => new Vector2(v.x, v.z));
 
-  //     growth.grow([...boundary, ...boundaryOuter], h);
+      growth.grow([...boundary, ...boundaryOuter], h);
 
-  //     if (iteration % 10 === 0) {
-  //       console.log(growth.toString());
-  //       h += .35;
-  //       // scene.meshes.forEach(mesh => mesh.dispose());
-  //       growth.asPipe(h, 0.2, material, scene, 6, 1);
+      if (iteration % 10 === 0) {
+        console.log(growth.toString());
+        h += .35;
+        // scene.meshes.forEach(mesh => mesh.dispose());
+        positions.push(...growth.vs.map(v => new Vector3(v.x, v.y, h)));
+        growth.asPipe(h, 0.2, material, scene, 6, 1);
 
-  //       // new ParallelTransportMesh(
-  //       //   boundary.map(v => new Vector3(v.x, v.y, h)),
-  //       //   .2,
-  //       //   5,
-  //       //   new StandardMaterial('standardMaterial', scene),
-  //       //   10,
-  //       //   scene
-  //       // );
+        // new ParallelTransportMesh(
+        //   boundary.map(v => new Vector3(v.x, v.y, h)),
+        //   .2,
+        //   5,
+        //   new StandardMaterial('standardMaterial', scene),
+        //   10,
+        //   scene
+        // );
 
-  //       // new ParallelTransportMesh(
-  //       //   boundaryOuter.map(v => new Vector3(v.x, v.y, h)),
-  //       //   .2,
-  //       //   5,
-  //       //   new StandardMaterial('standardMaterial', scene),
-  //       //   10,
-  //       //   scene
-  //       // );
-  //     }
+        // new ParallelTransportMesh(
+        //   boundaryOuter.map(v => new Vector3(v.x, v.y, h)),
+        //   .2,
+        //   5,
+        //   new StandardMaterial('standardMaterial', scene),
+        //   10,
+        //   scene
+        // );
+      }
 
-  //     if (growth.vs.length >= vertexLimit || iteration > 3000) {
-  //       console.log(growth.toString());
-  //       // scene.meshes.forEach(mesh => mesh.dispose());
-  //       growth.asPipe(h, 0.2, material, scene, 6, 1);
-  //       console.log(growth.hashDict);
-  //     }
-  //   }
-  // });
+      if (growth.vs.length >= vertexLimit || iteration > 3000) {
+        console.log(growth.toString());
+        // scene.meshes.forEach(mesh => mesh.dispose());
+        growth.asPipe(h, 0.2, material, scene, 6, 1);
+        positions.push(...growth.vs.map(v => new Vector3(v.x, v.y, h)));
+        console.log(growth.hashDict);
+      }
+    }
+  });
 };
 
 const onRender = (scene: Scene) => {
   if (scene.materials.length > 0) {
     time += 0.01;
 
-    scene.materials.forEach((material) => {
-      if (material instanceof ShaderMaterial) {
-        material.setFloat('time', time);
-      }
-    });
+    // scene.materials.forEach((material) => {
+    //   if (material instanceof ShaderMaterial) {
+    //     material.setFloat('time', time);
+    //   }
+    // });
   }
 };
 
@@ -110,6 +117,7 @@ const Renderer: React.FC = () => {
         engineOptions={undefined}
         adaptToDeviceRatio={undefined}
         sceneOptions={undefined}
+        positions={positions}
       />
     </div>
   );

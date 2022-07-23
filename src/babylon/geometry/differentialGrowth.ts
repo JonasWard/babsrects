@@ -5,6 +5,7 @@ import {
   Vector2,
   Vector3,
 } from '@babylonjs/core';
+import { NormalMaterial } from '@babylonjs/materials';
 import { ParallelTransportMesh } from './parallelTransportFrames';
 
 type HashDict = { [cellID: string]: Vector2[] };
@@ -129,11 +130,11 @@ export class Growth {
 
   static DEFAULT: GrowthInput = {
     vs: [],
-    repulsion: 0.015,
-    attraction: 0.025,
-    repulsionRadius: 1.25,
-    attractionRadius: 2.5,
-    jiggleRadius: 0.0001,
+    repulsion: 0.75,
+    attraction: 0.25,
+    repulsionRadius: 15.,
+    attractionRadius: 30.,
+    jiggleRadius: 0.00001,
     smoothingValue: 0.5,
     randomInsertionRate: 0.01,
   };
@@ -334,7 +335,7 @@ export class Growth {
       this.asPolygon(h),
       radius,
       vCount,
-      new StandardMaterial('standardMaterial', scene),
+      new NormalMaterial('normalMaterial', scene),
       uCount,
       scene
     );

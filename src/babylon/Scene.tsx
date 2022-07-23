@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Effect, Engine, Scene } from '@babylonjs/core';
+import { Effect, Engine, Scene, Vector3 } from '@babylonjs/core';
 import * as React from 'react';
 import { CUSTOM_SHADER_NAME, updateMaterial } from './Renderer';
 import shaders from './shaders/shaders';
+import { downloadGCode } from './production/gcodeParser';
 
 const materialStates = Object.keys(shaders);
 
@@ -32,6 +33,14 @@ const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
   });
 };
 
+const GCodeButton: React.FC<{positions}> = ({positions}) => {
+  return (
+    <button style={{ position: 'absolute', left: 0, top: 25 }} onClick={() => downloadGCode(positions)}>
+      clickme!
+    </button>
+  );
+};
+
 const ShaderButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
   return (
     <button style={{ position: 'absolute', left: 0, top: 0 }} onClick={onClick}>
@@ -47,9 +56,12 @@ export default ({
   sceneOptions,
   onRender,
   onSceneReady,
+  positions,
   ...rest
 }) => {
   const reactCanvas = useRef(null);
+
+  const [localPositions, setPositions] = React.useState<Vector3[]>([]);
 
   const [materialName, setMaterialName] = React.useState('a');
   const [materialIndex, setMaterialIndex] = React.useState(0);
@@ -62,6 +74,10 @@ export default ({
     setMaterialName(materialStates[localMaterialIndex]);
     setMaterialIndex(localMaterialIndex);
   };
+
+  useEffect(() => {
+    setPositions(positions);
+  }, [positions])
 
   // set up basic engine and scene
   useEffect(() => {
@@ -135,6 +151,7 @@ export default ({
     <>
       <canvas ref={reactCanvas} {...rest} />
       <ShaderButton onClick={changeMaterialState} />
+      <GCodeButton positions={localPositions}/>
     </>
   );
 };
