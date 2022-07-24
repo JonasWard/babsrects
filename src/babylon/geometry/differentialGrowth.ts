@@ -1,16 +1,19 @@
 import {
   Scene,
   ShaderMaterial,
-  StandardMaterial,
   Vector2,
   Vector3,
 } from '@babylonjs/core';
 import { NormalMaterial } from '@babylonjs/materials';
 import { ParallelTransportMesh } from './parallelTransportFrames';
+import { offsetPolyline, offsetSimpleValue } from './postProcessing';
 
 type HashDict = { [cellID: string]: Vector2[] };
+export type GrowthEdge = [Vector2, Vector2]
+
 type GrowthInput = {
   vs: Vector2[];
+  edges?: GrowthEdge[];
   repulsion?: number;
   attraction?: number;
   repulsionRadius?: number;
@@ -21,14 +24,6 @@ type GrowthInput = {
 };
 
 const RANGE_OFFSET = 1000;
-
-const sdGyroid = (v: Vector3, scale: number): number => {
-  v = v.scale(scale);
-  const vS = new Vector3(Math.sin(v.x) + Math.sin(v.y) + Math.sin(v.z));
-  const vC = new Vector3(Math.cos(v.x) + Math.cos(v.y) + Math.cos(v.z));
-
-  return Vector3.Dot(vS, vC);
-}
 
 const distance = (v1: Vector2, v2: Vector2): number => {
   return v2.subtract(v1).length();
@@ -108,6 +103,7 @@ const getNeighbours = (
 
 export class Growth {
   vs: Vector2[];
+  edges: GrowthEdge[];
   repulsionStrength: number;
   attractionStrength: number;
   repulsionRadius: number;
@@ -116,6 +112,7 @@ export class Growth {
   jiggleRadius: number;
   smoothingValue: number;
   randomInsertionRate: number;
+  postProcessing: (v: Vector2, h: number) => number = offsetSimpleValue;
 
   static repulsionMaximumThreshold: number = 45;
   static repulsionMinimumThreshold: number = 20;
@@ -130,6 +127,7 @@ export class Growth {
 
   static DEFAULT: GrowthInput = {
     vs: [],
+    edges: undefined,
     repulsion: 0.75,
     attraction: 0.55,
     repulsionRadius: 20.,
@@ -142,6 +140,7 @@ export class Growth {
   constructor(input: GrowthInput) {
     const {
       vs,
+      edges,
       repulsion,
       attraction,
       repulsionRadius,
@@ -152,6 +151,7 @@ export class Growth {
     } = input;
 
     this.vs = vs;
+    this.edges = edges ? edges : vs.map((v, i) => [v, vs[(i+1)%vs.length]]);
     this.repulsionStrength = repulsion ?? Growth.DEFAULT.repulsion;
     this.attractionStrength = attraction ?? Growth.DEFAULT.attraction;
     this.repulsionRadius = repulsionRadius ?? Growth.DEFAULT.repulsionRadius;
@@ -173,40 +173,42 @@ export class Growth {
   };
 
   public randomInsert = () => {
-    const newVs: Vector2[] = [];
+    const newEdges: GrowthEdge[] = [];
 
     let notInsert = 0;
 
-    this.vs.forEach((v, i) => {
-      newVs.push(v);
-
+    this.edges.forEach(e =>{
+      const [e0, e1] = e;
       const neighbourhoudCount = getNeighbours(
         this.hashDict,
-        v,
+        e0,
         this.repulsionRadius
       ).length;
 
       const boundaryCount = getNeighbours(
         this.hashDictBoundary,
-        v,
+        e0,
         this.repulsionRadius
       ).length;
 
       const neighbourCountAllows =
         neighbourhoudCount + boundaryCount < Growth.repulsionMaximumThreshold;
       const neigbourCountForces =
-        neighbourhoudCount + boundaryCount < Growth.repulsionMinimumThreshold * this.distanceFunction(v);
+        neighbourhoudCount + boundaryCount < Growth.repulsionMinimumThreshold * this.distanceFunction(e0);
 
       const shouldInsert = Math.random() < this.randomInsertionRate;
       if (neighbourCountAllows && (neigbourCountForces || shouldInsert)) {
-        const n = this.vs[(i + 1) % this.vs.length];
-        newVs.push(midPoint(v, n));
+        const eM = midPoint(e0, e1);
+        this.vs.push(eM);
+        newEdges.push([e0, eM]);
+        newEdges.push([eM, e1]);
         this.insertionCount++;
-      } else if (shouldInsert) {
-        notInsert++;
+      } else {
+        if (shouldInsert) notInsert++;
+        newEdges.push(e);
       }
     });
-    this.vs = newVs;
+    this.edges = newEdges;
     // console.log(`amount of times notInsert:   ${notInsert}`);
   };
 
@@ -226,17 +228,21 @@ export class Growth {
   };
 
   public split = () => {
-    const newVs: Vector2[] = [];
-    this.vs.forEach((v, i) => {
-      const n = this.vs[(i + 1) % this.vs.length];
+    const newEdges: GrowthEdge[] = [];
+    this.edges.forEach(e => {
+      const [e0, e1] = e;
 
-      newVs.push(v);
-      if (distance(v, n) > this.splitDistance) {
-        newVs.push(...interpolations(v, n, this.attractionRadius));
+      if (distance(e0, e1) > this.splitDistance) {
+        const newVs = interpolations(e0, e1, this.attractionRadius)
+        const allVs = [e0, ...newVs, e1];
+        this.vs.push(...newVs);
+
+        for (let i = 0; i < allVs.length - 1; i ++) newEdges.push([allVs[i], allVs[i+1]]);
+
         this.splitCount++;
-      }
+      } else newEdges.push(e)
     });
-    this.vs = newVs;
+    this.edges = newEdges;
   };
 
   public repulsion = () => {
@@ -319,7 +325,11 @@ export class Growth {
     this.iteration += 1;
   };
 
-  public asPolygon = (h: number = 0) => {
+  private postProcessResult = (h: number) => offsetPolyline(this.vs, h, this.postProcessing);
+
+  public asPolygon = (h: number = 0, withPostProcessing: boolean = false) => {
+    if (withPostProcessing) return this.postProcessResult(h).map((v) => new Vector3(v.x, v.y, h));
+
     return this.vs.map((v) => new Vector3(v.x, v.y, h));
   };
 
@@ -329,10 +339,11 @@ export class Growth {
     material: ShaderMaterial,
     scene: Scene,
     vCount: number = 15,
-    uCount: number = 2.5
+    uCount: number = 2.5,
+    withPostProcessing: boolean = true,
   ) => {
     const parallelTransportMesh = new ParallelTransportMesh(
-      this.asPolygon(h),
+      this.asPolygon(h, withPostProcessing),
       radius,
       vCount,
       new NormalMaterial('normalMaterial', scene),

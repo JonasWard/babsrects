@@ -1,3 +1,5 @@
+import { Vector2 } from '@babylonjs/core';
+import { GrowthEdge } from './differentialGrowth';
 import { HalfEdge, VolumetricCell, VolumetricVertex } from './volumetricMesh';
 
 // graph department
@@ -5,17 +7,55 @@ type Edge = { v0: string; v1: string; faceKey?: string; undirectedEdgeKey?: stri
 type UndirectedEdgeMap = { [undirectedEdgeID: string]: Edge[] };
 type EdgeChain = { isLoop: boolean; edges: string[]; nodes: string[] };
 type HalfEdgeMap = {[edgeId: string] : HalfEdge};
-type VertexMap = {[vertexId: string]: VolumetricVertex};
+type VolumetricVertexMap = {[vertexId: string]: VolumetricVertex};
+type VectorMap = {[vertexId: string]: Vector2};
 type EdgeMap = {[edgeId: string] : Edge};
 
 export const isSingleChain = (chains: EdgeChain[], items?: number) => {
     return chains.length === 1 && (items ? chains[0].edges.length === items : true);
 }
 
+const geometricName = (v : Vector2) => `${v.x.toFixed(6)}-${v.y.toFixed(6)}`
+
+const mapV = (v: Vector2, simpleVectorMap: VectorMap, vectorNameMap: {[id: string] : string}, vCount: number) => {
+  let vName: string;
+  const geoName = geometricName(v);
+  if(geoName in simpleVectorMap) {
+    vName = vectorNameMap[geoName];
+  } else {
+    simpleVectorMap[geoName] = v;
+    vName = `v${vCount}`;
+    vectorNameMap[geoName] = vName
+    vCount++;
+  }
+
+  return {vName, vCount};
+}
+
+// interface for growth objects, edges are already undirected
+const growthToGraph = (growthEdges: GrowthEdge[]) => {
+  const simpleVectorMap: VectorMap = {};
+  const vectorNameMap: {[id: string] : string} = {};
+  const edgeMap: EdgeMap = {};
+
+  let vCount = 0;
+
+  growthEdges.forEach((e, i) => {
+    const e0 = mapV(e[0], simpleVectorMap, vectorNameMap, vCount);
+    vCount = e0.vCount;
+    const e1 = mapV(e[1], simpleVectorMap, vectorNameMap, vCount);
+    vCount = e1.vCount;
+    const edgeName = `e${i}`;
+    edgeMap[edgeName] = {v0: e0.vName, v1: e1.vName};
+  })
+
+  return {edgeMap};
+}
+
 // interface for graph objects
 const cellToGraph = (cell: VolumetricCell) => {
     const halfEdgeMap: HalfEdgeMap = {};
-    const vertexMap: VertexMap = {};
+    const vertexMap: VolumetricVertexMap = {};
     const edgeMap: EdgeMap = {};
 
     cell.faces.forEach((face, i) => halfEdgesToGraphBase(face.getEdges(), face.name ?? `f${i}`, halfEdgeMap, vertexMap, edgeMap));
@@ -31,8 +71,12 @@ export const hEdgesToGraph = (edges: HalfEdge[]) => {
     return {halfEdgeMap, vertexMap, edgeMap, undirectedEdgesMap};
 }
 
+const growthEdgesToGraphBase = (growthEdges: GrowthEdge[]) => {
+
+}
+
 // interface for halfEDge arrays
-const halfEdgesToGraphBase = (hEdges: HalfEdge[], faceKey?: string, halfEdgeMap?: HalfEdgeMap, vertexMap?: VertexMap, edgeMap?: EdgeMap) => {
+const halfEdgesToGraphBase = (hEdges: HalfEdge[], faceKey?: string, halfEdgeMap?: HalfEdgeMap, vertexMap?: VolumetricVertexMap, edgeMap?: EdgeMap) => {
     halfEdgeMap = halfEdgeMap ?? {};
     hEdges.forEach(hEdge => halfEdgeMap[hEdge.id] = hEdge);
     vertexMap = vertexMap ?? {};
