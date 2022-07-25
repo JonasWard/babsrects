@@ -27,7 +27,7 @@ const getOffsetDirections = (vs: Vector2[]): Vector2[] => {
     const d1 = directions[i];
     const posAngle = positiveAngle(d1, d0);
     const offsetVectorScale = 1 / Math.cos(posAngle * 0.5);
-    const offsetVectorDirection = rotate(d1, posAngle * 0.5).scale(offsetVectorScale);
+    const offsetVectorDirection = rotate(d1, Math.PI * .5 + posAngle * 0.5).scale(offsetVectorScale);
 
     offsetDirections.push(offsetVectorDirection);
   }
