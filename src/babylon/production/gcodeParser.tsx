@@ -47,6 +47,10 @@ export const createGcode = (positions: Vector3[], extrusionValue: number = .5, o
     const maxY = positionArray.y.reduce((max, v) => max > v ? max : v, -Infinity);
     const maxZ = positionArray.z.reduce((max, v) => max > v ? max : v, -Infinity);
 
+    console.log('xSize: '+ (maxX - minX).toString());
+    console.log('ySize: '+ (maxY - minY).toString());
+    console.log('zSize: '+ (maxZ - minZ).toString());
+
     const offsetVector = originOffset.subtract(new Vector3((minX + maxX) * .5, (minY + maxY) * .5, 0.));
     const mappedPositions = positions.map(v => v.add(offsetVector));
 
