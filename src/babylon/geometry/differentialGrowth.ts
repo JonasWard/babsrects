@@ -112,7 +112,7 @@ export class Growth {
   jiggleRadius: number;
   smoothingValue: number;
   randomInsertionRate: number;
-  postProcessing: (v: Vector2, h: number) => number = offsetSimpleValue;
+  postProcessing: (v: Vector2, h: number, hIndex: number) => number = offsetSimpleValue;
 
   static repulsionMaximumThreshold: number = 45;
   static repulsionMinimumThreshold: number = 20;
@@ -130,8 +130,8 @@ export class Growth {
     edges: undefined,
     repulsion: 0.75,
     attraction: 0.55,
-    repulsionRadius: 20.,
-    attractionRadius: 30.,
+    repulsionRadius: 60.,
+    attractionRadius: 90.,
     jiggleRadius: 0.01,
     smoothingValue: .75,
     randomInsertionRate: 0.001,
@@ -325,10 +325,10 @@ export class Growth {
     this.iteration += 1;
   };
 
-  private postProcessResult = (h: number) => offsetPolyline(this.vs, h, this.postProcessing);
+  private postProcessResult = (h: number, hIndex: number) => offsetPolyline(this.vs, h, hIndex, this.postProcessing);
 
-  public asPolygon = (h: number = 0, withPostProcessing: boolean = false) => {
-    if (withPostProcessing) return this.postProcessResult(h).map((v) => new Vector3(v.x, v.y, h));
+  public asPolygon = (h: number = 0, withPostProcessing: boolean = false, hIndex: number) => {
+    if (withPostProcessing) return this.postProcessResult(h, hIndex).map((v) => new Vector3(v.x, v.y, h));
 
     return this.vs.map((v) => new Vector3(v.x, v.y, h));
   };
@@ -341,9 +341,10 @@ export class Growth {
     vCount: number = 15,
     uCount: number = 2.5,
     withPostProcessing: boolean = true,
+    hIndex: number = 0
   ) => {
     const parallelTransportMesh = new ParallelTransportMesh(
-      this.asPolygon(h, withPostProcessing),
+      this.asPolygon(h, withPostProcessing, hIndex),
       radius,
       vCount,
       new NormalMaterial('normalMaterial', scene),
