@@ -1,6 +1,8 @@
 import { Vector3 } from '@babylonjs/core'
 import { createCircle } from '../geometry/directedCurve'
 
+const centerOfPrint = new Vector3(700,250,0);
+
 const startCode = `G90
 M82
 M106 S0
@@ -30,7 +32,7 @@ export const testCircle = (radius, layerCount, layerHeight) => {
     downloadGCode(positions);
 }
 
-export const createGcode = (positions: Vector3[], extrusionValue: number = .5, originOffset: Vector3 = new Vector3(350,350,0)) => {
+export const createGcode = (positions: Vector3[], extrusionValue: number = .5, originOffset: Vector3 = centerOfPrint) => {
     // getting the bouding box of all the positions
     const positionArray = {x: [], y: [], z: []};
     positions.forEach(v => {
