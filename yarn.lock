@@ -2661,6 +2661,11 @@ axobject-query@^2.2.0:
   resolved "https://registry.yarnpkg.com/axobject-query/-/axobject-query-2.2.0.tgz#943d47e10c0b704aa42275e20edf3722648989be"
   integrity sha512-Td525n+iPOOyUQIeBfcASuG6uJsDOITl7Mds5gFyerkWiX7qhUTdYUBlSgNMyVqtSJqwpt1kXGLdUt6SykLMRA==
 
+b-spline@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/b-spline/-/b-spline-2.0.2.tgz#964becb6e33de6b11bae1ba229c4477eab2e4426"
+  integrity sha512-RPhM4apTUkejCpKo9sQrOiMdy/rUua4n98oppafwAnT64ZwqJDDp+fUk9+5EBEQNtTS3CsWWFRPukqFM3sasZQ==
+
 babel-jest@^27.4.2, babel-jest@^27.5.1:
   version "27.5.1"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-27.5.1.tgz#a1bf8d61928edfefd21da27eb86a695bfd691444"
