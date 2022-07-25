@@ -35,14 +35,14 @@ const getOffsetDirections = (vs: Vector2[]): Vector2[] => {
   return offsetDirections;
 };
 
-export const offsetSimpleValue = (v: Vector2, h: number): number => -3.;
+export const offsetSimpleValue = (v: Vector2, h: number, hIndex: number): number => -3.;
 
-export const offsetPolyline = (vs: Vector2[], h: number, valueFunction: (v: Vector2, h: number) => number = offsetSimpleValue): Vector2[] => {
+export const offsetPolyline = (vs: Vector2[], h: number, hIndex: number, valueFunction: (v: Vector2, h: number, hIndex) => number = offsetSimpleValue): Vector2[] => {
     const offsetDirections = getOffsetDirections(vs);
-    return vs.map((v, i) => v.add(offsetDirections[i].scale(valueFunction(v, h))))
+    return vs.map((v, i) => v.add(offsetDirections[i].scale(valueFunction(v, h, hIndex))))
 }
 
 export const gyroidPostProcessing = (v: Vector2, h: number): number => {
     const location = new Vector3(v.x, v.y, h);
-    return  - (sdGyroid(location, .1) * 1.5 + 1.5)
+    return  sdGyroid(location, .1) * 5. + 5.
 }
