@@ -23,7 +23,7 @@ const catmullPolygon = (vs: Vector3[]) => {
   return result;
 };
 
-const catmullPolygonN = (vs: Vector3[], n: number) => {
+export const catmullPolygonN = (vs: Vector3[], n: number) => {
   n = n > 10 ? 10 : n;
   for (let i = 0; i < n; i++) {
     vs = catmullPolygon(vs);
@@ -31,6 +31,13 @@ const catmullPolygonN = (vs: Vector3[], n: number) => {
 
   return vs;
 };
+
+export const catmullPolylineN = (vs: Vector3[], n: number) => {
+  const localVS = [vs[0], ...vs, vs[vs.length - 1]];
+  const catmullResult = catmullPolygonN(localVS, n);
+
+  return catmullResult.slice((n + 1) * n, catmullResult.length - (n + 1) * (n + 2));
+}
 
 export class VolumetricVertex {
   position: Vector3;
