@@ -284,6 +284,7 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   light.intensity = 1.5;
 
   material = updateMaterial(scene);
+  const extraPoints = [];
 
   // console.log('before adding curve');
 
@@ -305,7 +306,6 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   );
   
   const bottomLayer = intermedPositions.slice(0, 6).map(v => new Vector3(v.x, v.y, 0.));
-  const extraPoints = [];
   for (let i = 0; i < 10; i ++) {
     extraPoints.push(...bottomLayer);
   }
