@@ -4,6 +4,7 @@ import * as React from 'react';
 import { CUSTOM_SHADER_NAME, updateMaterial } from './Renderer';
 import shaders from './shaders/shaders';
 import { downloadGCode, testCircle } from './production/gcodeParser';
+import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
 
 const materialStates = Object.keys(shaders);
 
@@ -33,45 +34,21 @@ const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
   });
 };
 
-const TestCircleButton: React.FC = () => {
-  return (
-    <button style={{ position: 'absolute', right: 0, top: 0 }} onClick={() => testCircle(125, 6, 4.)}>
-      download GCode!
-    </button>
-  );
-  
-}
-
-const GCodeButton: React.FC<{positions}> = ({positions}) => {
-  return (
-    <button style={{ position: 'absolute', left: 0, top: 25 }} onClick={() => downloadGCode(positions)}>
-      download GCode!
-    </button>
-  );
-};
-
-const ShaderButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
-  return (
-    <button style={{ position: 'absolute', left: 0, top: 0 }} onClick={onClick}>
-      change shader!
-    </button>
-  );
-};
-
-const StopClick: React.FC<{ onClick?: (value: boolean) => void }> = ({ onClick }) => {
-  const [value, setValue] = React.useState(true);
-
-  const changeState = () => {
-    setValue(!value);
-    onClick(!value);
+const ActionButton: React.FC<{onClick: () => void, left?: number, right?: number, top?: number, text?: string}> = ({onClick, left, right, top, text}) => {
+  let style: { position: string, top: number, left: number} | { position: string, top: number, right: number};
+  console.log(right);
+  if (right !== undefined && left === undefined) {
+    style = { position: 'absolute', top: top ?? 0, right: right};
+  } else {
+    style= { position: 'absolute', top: top ?? 0, left: left ?? 0};
   }
-
+  
   return (
-    <button style={{ position: 'absolute', left: 0, top: 50 }} onClick={changeState}>
-      start/stop growth!
+    <button style={style as any} onClick={() => onClick()}>
+      {text ?? 'i Do Something'}
     </button>
   );
-};
+  }
 
 export default ({
   antialias,
@@ -82,6 +59,7 @@ export default ({
   onSceneReady,
   positions,
   setContinueGrowth,
+  parallelTransportMeshes,
   ...rest
 }) => {
   const reactCanvas = useRef(null);
@@ -175,10 +153,11 @@ export default ({
   return (
     <>
       <canvas ref={reactCanvas} {...rest} />
-      <ShaderButton onClick={changeMaterialState} />
-      <GCodeButton positions={localPositions}/>
-      <StopClick onClick={setContinueGrowth}/>
-      <TestCircleButton/>
+      <ActionButton onClick={changeMaterialState} text={'changeShader'}/>
+      <ActionButton onClick={() => downloadGCode(positions)} top={25} text={'downloadGcode'} />
+      <ActionButton onClick={setContinueGrowth} top={50} text={'start/stop growth'} />
+      <ActionButton onClick={() => testCircle(125, 6, 4.)} right={0} text={'testGCodeDownload'}/>
+      <ActionButton onClick={() => ParallelTransportMesh.createOBJ(parallelTransportMeshes)} right={0} top={25} text={'download obj'}/>
     </>
   );
 };
