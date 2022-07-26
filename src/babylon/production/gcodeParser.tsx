@@ -1,7 +1,7 @@
 import { Vector3 } from '@babylonjs/core'
 import { createCircle } from '../geometry/directedCurve'
 
-const centerOfPrint = new Vector3(700,250,0);
+const centerOfPrint = new Vector3(200,200,235);
 
 const startCode = `G90
 M82
@@ -17,7 +17,7 @@ G1 E-0.5000 F1800
 ; feature outer perimeter
 ; tool H4.500 W9.500
 G1 X${centerOfPrint.x} Y${centerOfPrint.y} Z600
-G1 Z04.500 F4800`
+G1 Z${4.500 + centerOfPrint.z} F4800`
 
 // G1 X199.596 Y139.065 F4800
 // G1 E0.0000 F1800
