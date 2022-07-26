@@ -10,12 +10,17 @@ import {
   VertexData,
 } from '@babylonjs/core';
 
+enum PolygonFaceCount {
+  Quad = 'quad',
+  Tri = 'tri',
+}
+
 export class ParallelTransportMesh extends Mesh {
   constructor(
     curvePoints: Vector3[],
     radius = 1.5,
     divisions: number,
-    material: ShaderMaterial | undefined | Material, 
+    material: ShaderMaterial | undefined | Material,
     uvScale: number,
     scene: Scene
   ) {
@@ -78,7 +83,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-        previousPositionBuffer.createVertexBuffer('previousPosition', 0, 3)
+      previousPositionBuffer.createVertexBuffer('previousPosition', 0, 3)
     );
 
     const previousDirectionBuffer = new Buffer(
@@ -88,7 +93,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-        previousDirectionBuffer.createVertexBuffer('previousDirection', 0, 3)
+      previousDirectionBuffer.createVertexBuffer('previousDirection', 0, 3)
     );
 
     const previousUVPatternBuffer = new Buffer(
@@ -108,7 +113,7 @@ export class ParallelTransportMesh extends Mesh {
       3
     );
     this.setVerticesBuffer(
-        nextPositionBuffer.createVertexBuffer('nextPosition', 0, 3)
+      nextPositionBuffer.createVertexBuffer('nextPosition', 0, 3)
     );
 
     const nextDirectionBuffer = new Buffer(
@@ -136,8 +141,30 @@ export class ParallelTransportMesh extends Mesh {
     }
   }
 
-  _indices(divisions: number, n: number) {
+  /** method that retunrs the indices of the faces */
+  _indices(
+    divisions: number,
+    n: number,
+    faceCount: PolygonFaceCount = PolygonFaceCount.Tri
+  ) {
     const indices: number[] = [];
+
+    const indexFunction =
+      PolygonFaceCount.Tri === faceCount
+        ? (a: number, b: number, c: number, d: number): number[] => [
+            a,
+            b,
+            c,
+            b,
+            d,
+            c,
+          ]
+        : (a: number, b: number, c: number, d: number): number[] => [
+            a,
+            b,
+            c,
+            d,
+          ];
 
     for (let i = 0; i < n - 1; i++) {
       const iA = i * divisions;
@@ -147,7 +174,7 @@ export class ParallelTransportMesh extends Mesh {
         const second = iA + ((j + 1) % divisions);
         const third = iB + j;
         const fourth = iB + ((j + 1) % divisions);
-        indices.push(first, second, third, second, fourth, third);
+        indices.push(...indexFunction(first, second, third, fourth));
       }
     }
 
@@ -426,4 +453,8 @@ export class ParallelTransportMesh extends Mesh {
 
     return { n, b };
   }
+
+  static createOBJ = (meshes: ParallelTransportMesh[]) => {
+    return '';
+  };
 }
