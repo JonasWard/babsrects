@@ -157,7 +157,8 @@ export default ({
       <ActionButton onClick={() => downloadGCode(positions)} top={25} text={'downloadGcode'} />
       <ActionButton onClick={setContinueGrowth} top={50} text={'start/stop growth'} />
       <ActionButton onClick={() => testCircle(125, 6, 4.)} right={0} text={'testGCodeDownload'}/>
-      <ActionButton onClick={() => ParallelTransportMesh.createOBJ(parallelTransportMeshes)} right={0} top={25} text={'download obj'}/>
+      <ActionButton onClick={() => ParallelTransportMesh.createSTL(parallelTransportMeshes)} right={0} top={25} text={'download stl'}/>
+      <ActionButton onClick={() => ParallelTransportMesh.createOBJ(parallelTransportMeshes)} right={0} top={50} text={'download obj'}/>
     </>
   );
 };

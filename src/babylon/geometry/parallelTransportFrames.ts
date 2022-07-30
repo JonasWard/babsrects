@@ -11,11 +11,16 @@ import {
 } from '@babylonjs/core';
 
 enum PolygonFaceCount {
-  Quad = 'quad',
-  Tri = 'tri',
+  QUAD = 'quad',
+  TRI = 'tri',
 }
 
 export class ParallelTransportMesh extends Mesh {
+  curvePoints: Vector3[];
+  radius: number;
+  divisions: number;
+  uvScale: number;
+
   constructor(
     curvePoints: Vector3[],
     radius = 1.5,
@@ -24,8 +29,15 @@ export class ParallelTransportMesh extends Mesh {
     uvScale: number,
     scene: Scene
   ) {
+    // initializing a mesh
     super('parallelTransportMesh', scene);
 
+    this.curvePoints = curvePoints;
+    this.radius = radius;
+    this.divisions = divisions;
+    this.uvScale = uvScale;
+
+    // initializing the buffer geometry data
     const {
       positions,
       uvs,
@@ -39,8 +51,8 @@ export class ParallelTransportMesh extends Mesh {
       nextPosition,
       nextUVPattern,
       nextDirection,
-    } = this._constructPositions(curvePoints, radius, divisions, uvScale);
-    const indices = this._indices(divisions, curvePoints.length);
+    } = this._constructPositions();
+    const indices = this._indices(PolygonFaceCount.TRI);
 
     const vertexData = new VertexData();
 
@@ -142,15 +154,11 @@ export class ParallelTransportMesh extends Mesh {
   }
 
   /** method that retunrs the indices of the faces */
-  _indices(
-    divisions: number,
-    n: number,
-    faceCount: PolygonFaceCount = PolygonFaceCount.Tri
-  ) {
+  _indices(faceCount: PolygonFaceCount = PolygonFaceCount.TRI) {
     const indices: number[] = [];
 
     const indexFunction =
-      PolygonFaceCount.Tri === faceCount
+      PolygonFaceCount.TRI === faceCount
         ? (a: number, b: number, c: number, d: number): number[] => [
             a,
             b,
@@ -166,14 +174,14 @@ export class ParallelTransportMesh extends Mesh {
             d,
           ];
 
-    for (let i = 0; i < n - 1; i++) {
-      const iA = i * divisions;
-      const iB = (i + 1) * divisions;
-      for (let j = 0; j < divisions; j++) {
+    for (let i = 0; i < this.curvePoints.length - 1; i++) {
+      const iA = i * this.divisions;
+      const iB = (i + 1) * this.divisions;
+      for (let j = 0; j < this.divisions; j++) {
         const first = iA + j;
-        const second = iA + ((j + 1) % divisions);
+        const second = iA + ((j + 1) % this.divisions);
         const third = iB + j;
-        const fourth = iB + ((j + 1) % divisions);
+        const fourth = iB + ((j + 1) % this.divisions);
         indices.push(...indexFunction(first, second, third, fourth));
       }
     }
@@ -191,23 +199,18 @@ export class ParallelTransportMesh extends Mesh {
     );
   }
 
-  _constructPositions(
-    curvePoints: Vector3[],
-    radius = 1,
-    divisions = 8,
-    uvScale = 2
-  ) {
-    const frames = this._constructFrames(curvePoints);
+  _constructPositions() {
+    const frames = this._constructFrames(this.curvePoints);
 
     const ns = [];
     const bns = [];
     const vs = [];
 
-    const alphaDelta = (2 * Math.PI) / divisions;
-    const vDelta = uvScale / divisions;
-    const uDelta = uvScale / (2.0 * Math.PI * radius);
+    const alphaDelta = (2 * Math.PI) / this.divisions;
+    const vDelta = this.uvScale / this.divisions;
+    const uDelta = this.uvScale / (2.0 * Math.PI * this.radius);
 
-    for (let i = 0; i < divisions; i++) {
+    for (let i = 0; i < this.divisions; i++) {
       const alpha = i * alphaDelta;
       ns.push(Math.cos(alpha));
       bns.push(Math.sin(alpha));
@@ -216,10 +219,10 @@ export class ParallelTransportMesh extends Mesh {
 
     const directionA = [];
     const directionB = [];
-    const positions = [];
-    const uvs = [];
-    const directions = [];
-    const patternUV = [];
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const directions: number[] = [];
+    const patternUV: number[] = [];
 
     const previousStartVector = frames[0].position.add(
       frames[0].position.subtract(frames[1].position).normalizeToNew()
@@ -289,14 +292,14 @@ export class ParallelTransportMesh extends Mesh {
           break;
       }
 
-      for (let i = 0; i < divisions; i++) {
+      for (let i = 0; i < this.divisions; i++) {
         directionA.push(...normal.asArray());
         directionB.push(...biNormal.asArray());
 
         const nM = normal.scale(ns[i]);
         const bNM = biNormal.scale(bns[i]);
         const d = nM.add(bNM);
-        const p = position.add(d.scale(radius));
+        const p = position.add(d.scale(this.radius));
         const v = vs[i];
 
         patternUV.push(u, vPattern);
@@ -454,7 +457,218 @@ export class ParallelTransportMesh extends Mesh {
     return { n, b };
   }
 
+  private static createMultiExportData = (
+    meshes: ParallelTransportMesh[],
+    polygonVertexCount = PolygonFaceCount.TRI
+  ): {
+    positions: [number, number, number][];
+    normals: [number, number, number][];
+    uvs: [number, number][];
+    indices: [number, number, number][] | [number, number, number, number][];
+  } => {
+    const groupedPositions: [number, number, number][] = [];
+    const groupedNormals: [number, number, number][] = [];
+    const groupedUVs: [number, number][] = [];
+    const groupedIndices:
+      | [number, number, number][]
+      | [number, number, number, number][] = [];
+
+    meshes.forEach((mesh) => {
+      const { positions, normals, uvs, indices } =
+        ParallelTransportMesh.createExportData(mesh, polygonVertexCount);
+
+      const offsetValue = groupedPositions.length;
+      positions.forEach((p) => groupedPositions.push(p));
+      normals.forEach((n) => groupedNormals.push(n));
+      uvs.forEach((uv) => groupedUVs.push(uv));
+      indices.forEach((f) =>
+        groupedIndices.push(f.map((i) => i + offsetValue))
+      );
+    });
+
+    return {
+      positions: groupedPositions,
+      normals: groupedNormals,
+      uvs: groupedUVs,
+      indices: groupedIndices,
+    };
+  };
+
+  private static createExportData = (
+    mesh: ParallelTransportMesh,
+    polygonVertexCount = PolygonFaceCount.TRI
+  ): {
+    positions: [number, number, number][];
+    normals: [number, number, number][];
+    uvs: [number, number][];
+    indices: [number, number, number][] | [number, number, number, number][];
+  } => {
+    const { positions, directions, uvs } = mesh._constructPositions();
+    const slicedPositions: [number, number, number][] = [];
+    const slicedNormals: [number, number, number][] = [];
+    const slicedUVs: [number, number][] = [];
+
+    for (let i = 0; i < positions.length; i += 3) {
+      slicedPositions.push([positions[i], positions[i + 1], positions[i + 2]]);
+      slicedNormals.push([directions[i], directions[i + 1], directions[i + 2]]);
+    }
+
+    for (let i = 0; i < uvs.length; i += 2) {
+      slicedUVs.push([uvs[i], uvs[i + 1]]);
+    }
+
+    if (polygonVertexCount === PolygonFaceCount.QUAD) {
+      const indices = mesh._indices(polygonVertexCount);
+      const slicedIndices: [number, number, number, number][] = [];
+      for (let i = 0; i < indices.length; i += 4) {
+        slicedIndices.push([
+          indices[i],
+          indices[i + 1],
+          indices[i + 2],
+          indices[i + 3],
+        ]);
+      }
+
+      return {
+        positions: slicedPositions,
+        normals: slicedNormals,
+        indices: slicedIndices,
+        uvs: slicedUVs,
+      };
+    } else {
+      const indices = mesh._indices(polygonVertexCount);
+      const slicedIndices: [number, number, number][] = [];
+      for (let i = 0; i < indices.length; i += 3) {
+        slicedIndices.push([indices[i], indices[i + 1], indices[i + 2]]);
+      }
+
+      return {
+        positions: slicedPositions,
+        normals: slicedNormals,
+        uvs: slicedUVs,
+        indices: slicedIndices,
+      };
+    }
+  };
+
   static createOBJ = (meshes: ParallelTransportMesh[]) => {
+    // get an index and face list fron the object, geometry is just fine, all faces are quad
+    const { positions, normals, uvs, indices } =
+      ParallelTransportMesh.createMultiExportData(
+        meshes,
+        PolygonFaceCount.TRI
+      );
+
+    const positionStrings = positions
+      .map((v) => `v ${v[0]} ${v[1]} ${v[2]}`)
+      .join('\n');
+    const textureStrings = uvs.map((uv) => `vt ${uv[0]} ${uv[1]}`).join('\n');
+    const normalStrings = normals
+      .map((n) => `vn ${n[0]} ${n[1]} ${n[2]}`)
+      .join('\n');
+    const faceStrings = indices
+      .map((f) =>
+        [
+          'f ',
+          ...f.map((i) => {
+            const index = i+1;
+            return `${index}/${index}/${index}`;
+          }),
+        ].join(' ')
+      )
+      .join('\n');
+
+    const objContent = [
+      positionStrings,
+      textureStrings,
+      normalStrings,
+      faceStrings,
+    ].join('\n');
+
+    const element = document.createElement('a');
+    const file = new Blob([objContent], {
+      type: 'text/plain',
+    });
+    element.href = URL.createObjectURL(file);
+    element.download = 'babsrect.obj';
+    document.body.appendChild(element);
+    element.click();
+  };
+
+  static createSTL = (meshes: ParallelTransportMesh[]) => {
+    // get an index and face list fron the object, geometry is just fine, all faces are triangles
+    const { positions, indices } = ParallelTransportMesh.createMultiExportData(
+      meshes,
+      PolygonFaceCount.TRI
+    );
+
+    const vertexStrings: string[] = [];
+
+    indices.forEach((f) => {
+      if (f.length === 3) {
+        const vs = [positions[f[0]], positions[f[1]], positions[f[2]]];
+        const v0 = new Vector3(...vs[0]);
+        const normal = new Vector3(...vs[1])
+          .subtract(v0)
+          .cross(new Vector3(...vs[2]).subtract(v0))
+          .normalize();
+
+        vertexStrings.push(
+          `facet normal ${normal.x} ${normal.y} ${normal.z}
+outer loop
+vertex ${vs[0][0]} ${vs[0][1]} ${vs[0][2]}
+vertex ${vs[1][0]} ${vs[1][1]} ${vs[1][2]}
+vertex ${vs[2][0]} ${vs[2][1]} ${vs[2][2]}
+end loop
+endfacet`
+        );
+      } else if (f.length === 4) {
+        const vs = [
+          positions[f[0]],
+          positions[f[1]],
+          positions[f[2]],
+          positions[f[3]],
+        ];
+        const v0 = new Vector3(...vs[0]);
+        const normal = new Vector3(...vs[1])
+          .subtract(v0)
+          .cross(new Vector3(...vs[2]).subtract(v0))
+          .normalize();
+
+        vertexStrings.push(
+          `facet normal ${normal.x} ${normal.y} ${normal.z}
+outer loop
+vertex ${vs[0][0]} ${vs[0][1]} ${vs[0][2]}
+vertex ${vs[1][0]} ${vs[1][1]} ${vs[1][2]}
+vertex ${vs[2][0]} ${vs[2][1]} ${vs[2][2]}
+vertex ${vs[3][0]} ${vs[3][1]} ${vs[3][2]}
+end loop
+endfacet`
+        );
+      }
+    });
+
+    const element = document.createElement('a');
+
+    const stlContent = `solid Exported by JonasWard with babsrects
+${vertexStrings.join('\n')}
+endsolid Exported by JonasWard with babsrects`;
+
+    const file = new Blob([stlContent], {
+      type: 'text/plain',
+    });
+    element.href = URL.createObjectURL(file);
+    element.download = 'babsrect.stl';
+    document.body.appendChild(element);
+    element.click();
+  };
+
+  static createGLTF = (meshes: ParallelTransportMesh[]) => {
+    // using tris
+    const positionArrays = meshes.map(
+      (mesh) => mesh._constructPositions().positions
+    );
+
     return '';
   };
 }
