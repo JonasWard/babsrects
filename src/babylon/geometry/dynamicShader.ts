@@ -1,5 +1,5 @@
 import {Scene, ShaderMaterial } from '@babylonjs/core';
-import { CUSTOM_SHADER_NAME } from '../Renderer';
+import { CUSTOM_SHADER_NAME } from '../../Components/Renderer';
 
 export function createCustomShader(scene: Scene, shaderName = 'a') {
   return new ShaderMaterial(

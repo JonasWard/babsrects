@@ -9,14 +9,14 @@ import {
   Color4,
 } from '@babylonjs/core';
 import * as React from 'react';
-import { addCurve } from './addCurve';
-import { Growth } from './geometry/differentialGrowth';
-import { createCircle } from './geometry/directedCurve';
-import { sdGyroid } from './geometry/distanceFunctions';
-import { createCustomShader } from './geometry/dynamicShader';
-import { ParallelTransportMesh } from './geometry/parallelTransportFrames';
-import { gyroidPostProcessing } from './geometry/postProcessing';
-import { catmullPolygonN, catmullPolylineN } from './geometry/volumetricMesh';
+import { addCurve } from '../babylon/addCurve';
+import { Growth } from '../babylon/geometry/differentialGrowth';
+import { createCircle } from '../babylon/geometry/directedCurve';
+import { sdGyroid } from '../babylon/geometry/distanceFunctions';
+import { createCustomShader } from '../babylon/geometry/dynamicShader';
+import { ParallelTransportMesh } from '../babylon/geometry/parallelTransportFrames';
+import { gyroidPostProcessing } from '../babylon/geometry/postProcessing';
+import { catmullPolygonN, catmullPolylineN } from '../babylon/geometry/volumetricMesh';
 import SceneComponent from './scene';
 import * as bspline from 'b-spline';
 
