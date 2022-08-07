@@ -1,11 +1,9 @@
 import {
   Scene,
   ShaderMaterial,
-  StandardMaterial,
   Vector2,
   Vector3,
   HemisphericLight,
-  Color3,
   Color4,
 } from '@babylonjs/core';
 import * as React from 'react';
@@ -15,8 +13,6 @@ import { createCircle } from '../babylon/geometry/directedCurve';
 import { sdGyroid } from '../babylon/geometry/distanceFunctions';
 import { createCustomShader } from '../babylon/geometry/dynamicShader';
 import { ParallelTransportMesh } from '../babylon/geometry/parallelTransportFrames';
-import { gyroidPostProcessing } from '../babylon/geometry/postProcessing';
-import { catmullPolygonN, catmullPolylineN } from '../babylon/geometry/volumetricMesh';
 import SceneComponent from './scene';
 import * as bspline from 'b-spline';
 
@@ -26,19 +22,14 @@ import {
   noiseValues,
   lightValues,
 } from '../data/23.07.2022';
+import { depricatedDataToObject, depricatedLightAndSoundToThing } from '../shapeGen/depricatedDataToShape';
 
 const parallelTransportMeshes = [];
-const postProcessing = true;
-const startOfPrintIteration = 200;
 const r = 80;
-const layerHeight = 2;
 const pipeRadius = 8;
 const center = new Vector3(0, 0, 0);
-const center2d = new Vector2(center.x, center.y);
-const outerRadiusDifference = 100;
 const divCalc = (r: number) => Math.ceil(r * Math.PI * 2);
 let continueGrowth = true;
-const layerCount = 200;
 
 const dataRemapping = (data: number[], min: number, max: number) => {
   const delta = max - min;
@@ -192,57 +183,6 @@ const lightAndSoundToThing = (
   return positions;
 };
 
-const dataToObject = (
-  dataArrays: number[][],
-  minRadius: number,
-  maxRadius: number,
-  layerHeight: number,
-  scaleFunction?: (v: number) => number
-) => {
-  const count = dataArrays.length;
-  // console.log(count);
-  const angleDelta = (2 * Math.PI) / count;
-  const layerDelta = layerHeight / count;
-
-  const mins = dataArrays.map((arr) =>
-    arr.reduce((min, v) => (min < v ? min : v), Infinity)
-  );
-  const maxs = dataArrays.map((arr) =>
-    arr.reduce((max, v) => (max > v ? max : v), -Infinity)
-  );
-  const means = dataArrays.map(
-    (arr) => arr.reduce((a, b) => a + b, 0) / arr.length
-  );
-
-  const radiusDelta = maxRadius - minRadius;
-  const multipliers = maxs.map((maxV, i) => radiusDelta / (maxV - mins[i]));
-
-  const positions: Vector3[] = [];
-
-  for (let i = 0; i < dataArrays[0].length; i++) {
-    const h = (i - 0) * layerHeight;
-    const locaPoints = [];
-    for (let j = 0; j < count; j++) {
-      let value = dataArrays[j][i];
-      const angle = j * angleDelta;
-      const z = h + layerDelta * j;
-      const minRadiusMultiplier = scaleFunction ? scaleFunction(z) : 1.;
-      let radius = (value - mins[j]) * multipliers[j] + minRadiusMultiplier * minRadius;
-      locaPoints.push(
-        new Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z)
-      );
-    }
-
-    positions.push(...locaPoints);
-  }
-
-  return catmullPolylineN(positions, 3);
-
-  // console.log(positions);
-
-  // return positions;
-};
-
 const startpPts = createCircle(center, r, divCalc(r)).map(
   (v) => new Vector2(v.x, v.z)
 );
@@ -293,64 +233,10 @@ const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
   const testDataA = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const testDataB = testDataA;
 
-  // // positions.push(...lightAndSoundToThing(testDataA, testDataB, 4, 100, 250, 20))
-  const intermedPositions = lightAndSoundToThing(
-    differentiateDatapoints(dataLaplacianSmoothing(sliceLightValues, 10), layerCount),
-    differentiateDatapoints(dataLaplacianSmoothing(sliceNoiseValues, 10), layerCount),
-    layerHeight,
-    50,
-    250,
-    2,
-    0,
-    150
-  );
-  
-  const bottomLayer = intermedPositions.slice(0, 6).map(v => new Vector3(v.x, v.y, 0.));
-  for (let i = 0; i < 10; i ++) {
-    extraPoints.push(...bottomLayer);
-  }
+  const intermedPositions = depricatedLightAndSoundToThing();
+  // const intermedPositions = depricatedDataToObject();
 
-  console.log(intermedPositions.length / layerCount);
-
-  // const intermedPositions = dataToObject(
-  //   [
-  //     differentiateDatapoints(
-  //       dataLaplacianSmoothing(sliceTemperature, 0),
-  //       layerCount
-  //     ),
-  //     differentiateDatapoints(
-  //       dataLaplacianSmoothing(sliceHumidity, 0),
-  //       layerCount
-  //     ),
-  //     differentiateDatapoints(
-  //       dataLaplacianSmoothing(sliceLightValues, 0),
-  //       layerCount
-  //     ),
-  //     differentiateDatapoints(
-  //       dataLaplacianSmoothing(sliceNoiseValues, 0),
-  //       layerCount
-  //     ),
-  //   ].map((d) => dataLaplacianSmoothing(d, 5)),
-  //   180,
-  //   240,
-  //   layerHeight,
-  //   dataSampling
-  // );
-
-  // const intermedPositions = lightAndSoundToThing(lightValues, noiseValues, 4, 100, 250, 20);
-  positions.push(...catmullPolylineN([...extraPoints, ...intermedPositions], 4));
-  // const positions = intermedPositions;
-
-  // positions.push(...dataToObject([
-  //   sliceLightValues,
-  //   sliceNoiseValues,
-  //   sliceHumidity,
-  //   sliceTemperature
-  // ], 120, 160, 4.))
-
-  // console.log(positions);
-
-  console.log('added curve');
+  positions.push(...intermedPositions);
 
   parallelTransportMeshes.length = 0; // clearing the array
   parallelTransportMeshes.push(new ParallelTransportMesh(positions, pipeRadius, 12, material, 2, scene));

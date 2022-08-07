@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Effect, Engine, Scene, Vector3 } from '@babylonjs/core';
 import * as React from 'react';
-import { CUSTOM_SHADER_NAME, updateMaterial } from './Renderer';
+import { CUSTOM_SHADER_NAME, updateMaterial } from './OldRenderer';
 import shaders from '../babylon/shaders/shaders';
 import { downloadGCode, testCircle } from '../babylon/production/gcodeParser';
 import { ParallelTransportMesh } from '../babylon/geometry/parallelTransportFrames';

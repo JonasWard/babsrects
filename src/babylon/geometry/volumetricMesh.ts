@@ -1,43 +1,12 @@
 import { Mesh, Scene, Vector3, VertexData } from '@babylonjs/core';
 import { v4 } from 'uuid';
+import { catmullPolygonN } from '../../shapeGen/postProcessing';
 import { findAllChainsOfDualDegreeNodes, hEdgesToGraph } from './graphs';
 import { ParallelTransportMesh } from './parallelTransportFrames';
 
 type IVector = { x: number; y: number; z: number };
 
 const toIVector = (v: Vector3): IVector => ({ x: v.x, y: v.y, z: v.z });
-const catmullPolygon = (vs: Vector3[]) => {
-  const midPoints = vs.map((v, i) => v.add(vs[(i + 1) % vs.length]).scale(0.5));
-  const result = [];
-  midPoints.forEach((m, i) => {
-    result.push(
-      m
-        .add(midPoints[(i + midPoints.length - 1) % midPoints.length])
-        .scale(0.5)
-        .add(vs[i])
-        .scale(0.5)
-    );
-    result.push(m);
-  });
-
-  return result;
-};
-
-export const catmullPolygonN = (vs: Vector3[], n: number) => {
-  n = n > 10 ? 10 : n;
-  for (let i = 0; i < n; i++) {
-    vs = catmullPolygon(vs);
-  }
-
-  return vs;
-};
-
-export const catmullPolylineN = (vs: Vector3[], n: number) => {
-  const localVS = [vs[0], ...vs, vs[vs.length - 1]];
-  const catmullResult = catmullPolygonN(localVS, n);
-
-  return catmullResult.slice((n + 1) * n, catmullResult.length - (n + 1) * (n + 2));
-}
 
 export class VolumetricVertex {
   position: Vector3;

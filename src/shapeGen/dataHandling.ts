@@ -1,16 +1,24 @@
 import * as bspline from 'b-spline';
 
-const dnumberRemapping = (data: number[], min: number, max: number) => {
+export const getMin = (data: number[]) => data.reduce((min, v) => (min < v ? min : v), Infinity);
+export const getMax = (data: number[]) => data.reduce((max, v) => (max > v ? max : v), -Infinity);
+
+export const numberRemapping = (data: number[], min: number, max: number) => {
   const delta = max - min;
 
-  const dataMin = data.reduce((min, v) => (min < v ? min : v), Infinity);
-  const dataMax = data.reduce((max, v) => (max > v ? max : v), -Infinity);
+  const dataMin = getMin(data);
+  const dataMax = getMax(data);
 
+  if (Math.abs(dataMax - dataMin) > .001 ) {
   const multiplier = delta / (dataMax - dataMin);
   return data.map((v) => (v - dataMin) * multiplier + min);
+  }
+  const avg = (min + max) * .5;
+
+  return data.map(() => avg);
 };
 
-const laplacianSmoothing = (data: number[], neighbourCount: number) => {
+export const laplacianSmoothing = (data: number[], neighbourCount: number) => {
   if (neighbourCount < 1) return data;
   const finalIndex = data.length - 1;
   return data.map((v, i, arr) => {
@@ -26,7 +34,7 @@ const laplacianSmoothing = (data: number[], neighbourCount: number) => {
   });
 };
 
-const bezierSampling = (z: number, zDomain: [number, number]): number => {
+export const bezierSampling = (z: number, zDomain: [number, number]): number => {
   if (z > zDomain[1]) console.log(z);
 
   // quadratic bezier
