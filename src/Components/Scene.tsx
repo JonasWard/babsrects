@@ -1,54 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Effect, Engine, Scene, Vector3 } from '@babylonjs/core';
+import { Engine, Scene, StandardMaterial } from '@babylonjs/core';
 import * as React from 'react';
-import { CUSTOM_SHADER_NAME, updateMaterial } from './OldRenderer';
 import shaders from '../babylon/shaders/shaders';
-import { downloadGCode, testCircle } from '../babylon/production/gcodeParser';
 import { ParallelTransportMesh } from '../babylon/geometry/parallelTransportFrames';
 
 const materialStates = Object.keys(shaders);
-
-const registerMaterial = (
-  shader: { vertex: string; fragment: string },
-  shaderName = 'a'
-) => {
-  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'VertexShader'] =
-    shader.vertex;
-  Effect.ShadersStore[CUSTOM_SHADER_NAME + shaderName + 'FragmentShader'] =
-    shader.fragment;
-};
-
-const updateSceneGeometriesMaterial = (scene: Scene, materialName: string) => {
-  // console.log(
-  //   `trying to update the custom shader parameters using the parameters for ${materialName}`
-  // );
-
-  registerMaterial(shaders[materialName], materialName);
-
-  const localMaterial = updateMaterial(scene, materialName);
-
-  scene.geometries.forEach((geo) => {
-    geo.meshes.forEach((mesh) => {
-      mesh.material = localMaterial;
-    });
-  });
-};
-
-const ActionButton: React.FC<{onClick: () => void, left?: number, right?: number, top?: number, text?: string}> = ({onClick, left, right, top, text}) => {
-  let style: { position: string, top: number, left: number} | { position: string, top: number, right: number};
-  console.log(right);
-  if (right !== undefined && left === undefined) {
-    style = { position: 'absolute', top: top ?? 0, right: right};
-  } else {
-    style= { position: 'absolute', top: top ?? 0, left: left ?? 0};
-  }
-  
-  return (
-    <button style={style as any} onClick={() => onClick()}>
-      {text ?? 'i Do Something'}
-    </button>
-  );
-  }
 
 export default ({
   antialias,
@@ -58,29 +14,27 @@ export default ({
   onRender,
   onSceneReady,
   positions,
-  setContinueGrowth,
-  parallelTransportMeshes,
   ...rest
 }) => {
-  const reactCanvas = useRef(null);
+  const reactCanvas: React.MutableRefObject<null | HTMLCanvasElement> =
+    useRef(null);
 
-  const [localPositions, setPositions] = React.useState<Vector3[]>([]);
-
-  const [materialName, setMaterialName] = React.useState('a');
-  const [materialIndex, setMaterialIndex] = React.useState(0);
   const [scene, setScene] = React.useState(new Scene(new Engine(null)));
 
-  // registerMaterials(shaders);
-
-  const changeMaterialState = () => {
-    const localMaterialIndex = (materialIndex + 1) % materialStates.length;
-    setMaterialName(materialStates[localMaterialIndex]);
-    setMaterialIndex(localMaterialIndex);
-  };
-
   useEffect(() => {
-    setPositions(positions);
-  }, [positions])
+    if (scene.isReady && positions?.length > 0) {
+      if (scene?.geometries) for (const geo of scene?.geometries) geo.dispose();
+
+    new ParallelTransportMesh(
+      positions,
+      0.5,
+      8,
+      new StandardMaterial('standard', scene),
+      2,
+      scene
+    );
+    }
+  }, [positions, scene.isReady]);
 
   // set up basic engine and scene
   useEffect(() => {
@@ -143,22 +97,9 @@ export default ({
     onSceneReady,
   ]);
 
-  useEffect(() => {
-    // console.log(
-    //   'material name has updated, trying to update all the geometries with it'
-    // );
-    updateSceneGeometriesMaterial(scene, materialName);
-  }, [materialName]);
-
   return (
     <>
       <canvas ref={reactCanvas} {...rest} />
-      <ActionButton onClick={changeMaterialState} text={'changeShader'}/>
-      <ActionButton onClick={() => downloadGCode(positions)} top={25} text={'downloadGcode'} />
-      <ActionButton onClick={setContinueGrowth} top={50} text={'start/stop growth'} />
-      <ActionButton onClick={() => testCircle(125, 6, 4.)} right={0} text={'testGCodeDownload'}/>
-      <ActionButton onClick={() => ParallelTransportMesh.createSTL(parallelTransportMeshes)} right={0} top={25} text={'download stl'}/>
-      <ActionButton onClick={() => ParallelTransportMesh.createOBJ(parallelTransportMeshes)} right={0} top={50} text={'download obj'}/>
     </>
   );
 };

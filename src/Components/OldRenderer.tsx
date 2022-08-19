@@ -13,7 +13,7 @@ import { createCircle } from '../babylon/geometry/directedCurve';
 import { sdGyroid } from '../babylon/geometry/distanceFunctions';
 import { createCustomShader } from '../babylon/geometry/dynamicShader';
 import { ParallelTransportMesh } from '../babylon/geometry/parallelTransportFrames';
-import SceneComponent from './scene';
+import SceneComponent from './OldScene';
 import * as bspline from 'b-spline';
 
 import {

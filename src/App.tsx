@@ -3,13 +3,12 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import OldRenderer from './Components/OldRenderer';
-
+import Renderer from './Components/Renderer';
 import './App.css';
 
 ReactDOM.render(
     <React.StrictMode>
-      <OldRenderer />
+      <Renderer />
     </React.StrictMode>,
     document.getElementById('root')
   );

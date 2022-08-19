@@ -44,8 +44,6 @@ const differentiateDatapoints = (data: number[], count: number): number[] => {
     newDataValues.push((data[b] - data[a]) * interpolate + data[a]);
   }
 
-  console.log(newDataValues);
-
   return newDataValues;
 };
 
@@ -133,6 +131,8 @@ export const depricatedLightAndSoundToThing = () => {
     extraPoints.push(...bottomLayer);
   }
 
+  console.log([...extraPoints, ...positions]);
+
   return catmullPolylineN([...extraPoints, ...positions], 4);
 };
 
@@ -162,6 +162,6 @@ export const depricatedDataToObject = () => {
       layerHeight,
       dataSampling
     ),
-    4
+    3
   );
 };
