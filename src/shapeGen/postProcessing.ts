@@ -54,14 +54,14 @@ export const positionScaling = (
   return new Vector3(v.x, v.y * s, v.z);
 };
 
-export const tweeningZ = (layers: Vector3[][], layerHeight): Vector3[] => {
+export const tweeningZ = (layers: Vector3[][], layerHeight: number): Vector3[] => {
     const tweenedVs = [];
 
     layers.forEach(layer => {
         const zStep = layerHeight / layer.length;
         layer.forEach((v, i) => {
             const copy = v.clone();
-            copy.z = zStep * i;
+            copy.z += zStep * i;
             tweenedVs.push(copy);
         })
     })

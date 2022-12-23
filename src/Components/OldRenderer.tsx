@@ -26,7 +26,7 @@ import { depricatedDataToObject, depricatedLightAndSoundToThing } from '../shape
 
 const parallelTransportMeshes = [];
 const r = 80;
-const pipeRadius = 8;
+const pipeRadius = 20;
 const center = new Vector3(0, 0, 0);
 const divCalc = (r: number) => Math.ceil(r * Math.PI * 2);
 let continueGrowth = true;

@@ -137,8 +137,8 @@ export const depricatedLightAndSoundToThing = () => {
 };
 
 export const depricatedDataToObject = () => {
-  return catmullPolylineN(
-    dataToObject(
+  // return catmullPolylineN(
+    const ps = dataToObject(
       [
         differentiateDatapoints(
           laplacianSmoothing(sliceTemperature, 0),
@@ -161,7 +161,9 @@ export const depricatedDataToObject = () => {
       240,
       layerHeight,
       dataSampling
-    ),
-    3
-  );
+    );
+    console.log(ps);
+    return ps;
+  //   3
+  // );
 };

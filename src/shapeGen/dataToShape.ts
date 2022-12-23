@@ -104,6 +104,7 @@ const dataToLayers = (
   const dirVs: { x: number; y: number }[] = [];
 
   if (inBetweenPositions < 1) {
+    console.log('no else');
     for (let j = 0; j < count; j++) {
       const angle = j * angleDelta;
       dirVs.push({
@@ -129,6 +130,7 @@ const dataToLayers = (
       layers.push(localPoints);
     }
   } else {
+    console.log('else what ?');
     radius = radius
       ? radius
       : 0.5 * (getMax(dataArrays[0]) + getMin(dataArrays[0]));
@@ -208,12 +210,17 @@ export const dataToObject = (
     avgValue
   );
 
+  console.log(layers);
+
   // post processing
   const extraPoints =
     extraBottomLayer > 0
       ? Array(extraBottomLayer * layers[0].length).fill(layers[0])
       : [];
-  const tweened = extraPoints.concat(tweeningZ(layers, layerHeight));
+  const tweened = [...extraPoints, ...tweeningZ(layers, layerHeight)];
+
+  console.log(tweened);
+
   const scaled = scaleFunction
     ? tweened.map((v) => positionScaling(v, scaleFunction))
     : tweened;
