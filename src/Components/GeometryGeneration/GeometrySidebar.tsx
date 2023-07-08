@@ -2,6 +2,7 @@ import { Scene, Vector3 } from '@babylonjs/core';
 import * as React from 'react';
 import DepricatedDataToObject from './DepricatedDataToObject';
 import DepricatedLightAndSound from './DepricatedLightAndSound';
+import LoadGCode from './LoadGCode';
 
 const width = 150;
 const buttonMargin = 2;
@@ -79,6 +80,11 @@ const GeometrySidebar: React.FC<IGeometrySidebarProps> = ({ setPositions }) => {
           updatePositions={setPositions}
         />
         <DepricatedDataToObject
+          style={rightSidebarStyle}
+          buttonStyle={rightSideBarButton}
+          updatePositions={setPositions}
+        />
+        <LoadGCode
           style={rightSidebarStyle}
           buttonStyle={rightSideBarButton}
           updatePositions={setPositions}
