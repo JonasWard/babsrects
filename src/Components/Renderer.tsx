@@ -10,7 +10,7 @@ import GeometrySidebar from './GeometryGeneration/GeometrySidebar';
 import SceneComponent from './Scene';
 
 const onSceneReady = (scene: Scene, canvas: HTMLCanvasElement) => {
-  const light = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene);
+  const light = new HemisphericLight('ambient', new Vector3(1, -1, 0), scene);
   scene.clearColor = new Color4(1, 1, 1, 1);
   light.intensity = 1.5;
 

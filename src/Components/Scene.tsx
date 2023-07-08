@@ -27,7 +27,7 @@ export default ({
 
     new ParallelTransportMesh(
       positions,
-      2,
+      10,
       8,
       new StandardMaterial('standard', scene),
       2,
